@@ -1,3 +1,5 @@
+// import the data base pool of connections
+import { pool } from '../DB/index.js';
 // import the promise to encrypt the user's password
 import { hashPassword } from '../utils/auth/passwordHash.js';
 // import the module to sign a JWT
