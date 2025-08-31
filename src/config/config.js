@@ -25,9 +25,6 @@ export const config = {
   // Database port from environment variables
   dbPort: process.env.DB_PORT,
 
-  // API key from environment variables
-  APIKey: process.env.API_KEY,
-
   // JWT secret key for the authentication application
   authAppJwtKey: process.env.AUTH_APP_JWT_SECRET_KEY,
 
