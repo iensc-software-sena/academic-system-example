@@ -45,3 +45,6 @@ INSERT INTO Users (
 (1045673212, 'user02', '$2b$10$abcdef213sf32s', 'estudiante', 'user02@iensch.edu.co', '+573007778899', 'Av 6 Norte #55-66', 'REG003', 'Matemáticas', 'Juan', 'David', 'Martínez', 'Torres'),
 (1056437218, 'prof01', '$2b$10$abcdef3r354s12', 'docente', 'prof01@iensch.edu.co', '+573001234567', 'Calle 50 #20-10', 'REG004', 'Física', 'Laura', 'Isabel', 'Fernández', 'Ruiz'),
 (1056438213, 'user03', '$2b$10$abcdef2sd35d45', 'estudiante', 'user03@iensch.edu.co', '+573009998877', 'Carrera 100 #25-50', 'REG005', 'Ingeniería Mecánica', 'Andrés', 'Felipe', 'Morales', 'Castillo');
+
+
+SELECT * FROM Users;
