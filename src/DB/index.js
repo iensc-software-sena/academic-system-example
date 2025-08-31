@@ -15,4 +15,10 @@ export const pool = createPool({
   port: config.appPort || 3306,
   // data base schema name to connect
   database: config.dbName,
+  // Queue connection requests if all are busy
+  waitForConnections: true,
+  // Max number of connections in the pool
+  connectionLimit: 10,
+  // Unlimited queued requests
+  queueLimit: 0,
 });
