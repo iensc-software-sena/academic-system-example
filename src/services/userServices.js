@@ -16,9 +16,9 @@ export class UserServices {
 
   async login(username, password) {
     try {
-      // Find the user by their username in the database
+      // Find the user by their username in the d
       const [rows] = await pool.query(
-        'SELECT * FROM users WHERE username = ?',
+        'SELECT * FROM Users WHERE username = ?',
         [username]
       );
 
@@ -49,7 +49,6 @@ export class UserServices {
       // Resolves the promise with the JWT token
       return { status: 'logged', token: userToken };
     } catch (error) {
-      // Return a Boom error if there's an exception
       throw Boom.boomify(error, {
         message: 'Unable to verify user credentials',
       });
@@ -60,7 +59,7 @@ export class UserServices {
     try {
       // searches the database if there is a user with this username
       const [rows] = await pool.query(
-        'SELECT * FROM users WHERE username = ?',
+        'SELECT * FROM Users WHERE username = ?',
         [newUser.username]
       );
 
@@ -74,12 +73,32 @@ export class UserServices {
 
       // create a new record in the database
       await pool.query(
-        `INSERT INTO users (username, password, email, firstName, middleName, firstLastName, secondLastName)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `INSERT INTO Users (
+          id,
+          username,
+          password,
+          role,
+          email,
+          phone,
+          address,
+          registrationNumber,
+          program,
+          firstName,
+          middleName,
+          firstLastName,
+          secondLastName
+        )
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
+          newUser.id,
           newUser.username,
           hash,
+          newUser.role,
           newUser.email,
+          newUser.phone,
+          newUser.address,
+          newUser.registrationNumber,
+          newUser.program,
           newUser.firstName,
           newUser.middleName,
           newUser.firstLastName,
@@ -98,25 +117,36 @@ export class UserServices {
   }
 
   async updateOne(userId, newUserData) {
-
     if (!newUserData) {
       // return an error response
       throw Boom.badRequest('No data provided');
     }
 
     try {
-      // hash the new user password before saving it in the database
-      const hash = await hashPassword(newUserData.password);
-
       // update the record in the database
       const [result] = await pool.query(
-        `UPDATE users
-         SET username = ?, password = ?, email = ?, firstName = ?, middleName = ?, firstLastName = ?, secondLastName = ?
+        `UPDATE Users
+         SET
+          username = ?,
+          role = ?,
+          email = ?,
+          phone = ?,
+          address = ?,
+          registrationNumber = ?,
+          program = ?,
+          firstName = ?,
+          middleName = ?,
+          firstLastName = ?,
+          secondLastName = ?
          WHERE id = ?`,
         [
           newUserData.username,
-          hash,
+          newUserData.role,
           newUserData.email,
+          newUserData.phone,
+          newUserData.address,
+          newUserData.registrationNumber,
+          newUserData.program,
           newUserData.firstName,
           newUserData.middleName,
           newUserData.firstLastName,
@@ -132,7 +162,6 @@ export class UserServices {
 
       // return a success response
       return { status: 'UPDATED SUCCESSFULLY' };
-
     } catch (error) {
       // Return a Boom error if there's an exception
       throw Boom.boomify(error, {
@@ -141,8 +170,45 @@ export class UserServices {
     }
   }
 
-  async deleteOne(userId) {
+  async updatePassword(userId, username, email, newPassword) {
+    if (!userId || !username || !email || !newPassword) {
+      throw Boom.badRequest('Missing data for password update');
+    }
 
+    try {
+      // Verify that the user exists with the given ID, username, and email
+      const [rows] = await pool.query(
+        'SELECT * FROM Users WHERE id = ? AND username = ? AND email = ?',
+        [userId, username, email]
+      );
+
+      if (rows.length === 0) {
+        throw Boom.notFound('User not found with provided credentials');
+      }
+
+      // Hash the new password
+      const hash = await hashPassword(newPassword);
+
+      // Update the password
+      const [result] = await pool.query(
+        'UPDATE Users SET password = ? WHERE id = ?',
+        [hash, userId]
+      );
+
+      if (result.affectedRows === 0) {
+        throw Boom.notFound('Password not updated');
+      }
+
+      return { status: 'PASSWORD UPDATED SUCCESSFULLY' };
+    } catch (error) {
+      // Return a Boom error if there's an exception
+      throw Boom.boomify(error, {
+        message: 'Unable to update user password',
+      });
+    }
+  }
+
+  async deleteOne(userId) {
     // return an error response
     if (!userId) {
       throw Boom.badRequest('No user ID provided');
@@ -151,7 +217,7 @@ export class UserServices {
     try {
       // destroy the record in the database
       const [result] = await pool.query(
-        'DELETE FROM users WHERE id = ?',
+        'DELETE FROM Users WHERE id = ?',
         [userId]
       );
 
@@ -178,7 +244,7 @@ export class UserServices {
 
     try {
       const [rows] = await pool.query(
-        'SELECT * FROM users WHERE id = ?',
+        'SELECT * FROM Users WHERE id = ?',
         [userId]
       );
 
@@ -202,19 +268,19 @@ export class UserServices {
   async listAll() {
     try {
       // save all records in the constant
-      const [rows] = await pool.query('SELECT * FROM users ORDER BY id ASC');
+      const [rows] = await pool.query(
+        `SELECT id, username, role, email, phone, address, registrationNumber,
+                program, firstName, middleName, firstLastName, secondLastName
+         FROM Users
+         ORDER BY id ASC`
+      );
 
       // if no records exist
       if (!rows.length) {
         return [];
       }
 
-      const theUsers = rows.map((user) => {
-        delete user.password;
-        return user;
-      });
-
-      return theUsers;
+      return [...rows];
     } catch (error) {
       // return a Boom error if there's an exception finding all users
       throw Boom.boomify(error, {
