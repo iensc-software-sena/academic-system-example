@@ -1,0 +1,34 @@
+{
+  "name": "academic-system-example",
+  "version": "0.0.1",
+  "description": "Web application example",
+  "keywords": [
+    "JavaScript",
+    "Node"
+  ],
+  "homepage": "https://github.com/Cristianco9/academic-system-example#readme",
+  "bugs": {
+    "url": "https://github.com/Cristianco9/academic-system-example/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cristianco9/academic-system-example.git"
+  },
+  "license": "MIT",
+  "author": "Cristian Camilo Cortes Ortiz<cristian_cortes_ortiz@hotmail.com>",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "dev": "nodemon src/app.js",
+    "dev-dep": "npm install && npm install nodemon morgan eslint eslint-config-prettier eslint-plugin-prettier prettier --save-dev -D",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "eslint": "^9.25.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.6",
+    "morgan": "^1.10.0",
+    "nodemon": "^3.1.9",
+    "prettier": "^3.5.3"
+  }
+}
