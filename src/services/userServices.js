@@ -48,8 +48,8 @@ export class UserServices {
 
       // Resolves the promise with the JWT token
       return { status: 'logged', token: userToken };
-    } catch (error) {
-      throw Boom.boomify(error, {
+    } catch (err) {
+      throw Boom.boomify(err, {
         message: 'Unable to verify user credentials',
       });
     }
@@ -108,15 +108,15 @@ export class UserServices {
 
       // return a success response
       return { status: 'CREATED SUCCESSFULLY' };
-    } catch (error) {
+    } catch (err) {
       // Return a Boom error if there's an exception
-      throw Boom.boomify(error, {
+      throw Boom.boomify(err, {
         message: 'Unable to create new user',
       });
     }
   }
 
-  async updateOne(userId, newUserData) {
+  async updateOne(id, newUserData) {
     if (!newUserData) {
       // return an error response
       throw Boom.badRequest('No data provided');
@@ -151,7 +151,7 @@ export class UserServices {
           newUserData.middleName,
           newUserData.firstLastName,
           newUserData.secondLastName,
-          userId,
+          id,
         ]
       );
 
@@ -162,16 +162,16 @@ export class UserServices {
 
       // return a success response
       return { status: 'UPDATED SUCCESSFULLY' };
-    } catch (error) {
+    } catch (err) {
       // Return a Boom error if there's an exception
-      throw Boom.boomify(error, {
+      throw Boom.boomify(err, {
         message: 'Unable to update user',
       });
     }
   }
 
-  async updatePassword(userId, username, email, newPassword) {
-    if (!userId || !username || !email || !newPassword) {
+  async updatePassword(id, username, email, newPassword) {
+    if (!id || !username || !email || !newPassword) {
       throw Boom.badRequest('Missing data for password update');
     }
 
@@ -179,7 +179,7 @@ export class UserServices {
       // Verify that the user exists with the given ID, username, and email
       const [rows] = await pool.query(
         'SELECT * FROM Users WHERE id = ? AND username = ? AND email = ?',
-        [userId, username, email]
+        [id, username, email]
       );
 
       if (rows.length === 0) {
@@ -192,7 +192,7 @@ export class UserServices {
       // Update the password
       const [result] = await pool.query(
         'UPDATE Users SET password = ? WHERE id = ?',
-        [hash, userId]
+        [hash, id]
       );
 
       if (result.affectedRows === 0) {
@@ -200,17 +200,17 @@ export class UserServices {
       }
 
       return { status: 'PASSWORD UPDATED SUCCESSFULLY' };
-    } catch (error) {
+    } catch (err) {
       // Return a Boom error if there's an exception
-      throw Boom.boomify(error, {
+      throw Boom.boomify(err, {
         message: 'Unable to update user password',
       });
     }
   }
 
-  async deleteOne(userId) {
+  async deleteOne(id) {
     // return an error response
-    if (!userId) {
+    if (!id) {
       throw Boom.badRequest('No user ID provided');
     }
 
@@ -218,7 +218,7 @@ export class UserServices {
       // destroy the record in the database
       const [result] = await pool.query(
         'DELETE FROM Users WHERE id = ?',
-        [userId]
+        [id]
       );
 
       // if no rows were deleted, return an error
@@ -228,24 +228,24 @@ export class UserServices {
 
       // return a success response
       return { status: 'DELETED SUCCESSFULLY' };
-    } catch (error) {
+    } catch (err) {
       // return a Boom error if there's an exception deleting the record
-      throw Boom.boomify(error, {
+      throw Boom.boomify(err, {
         message: 'Unable to delete user',
       });
     }
   }
 
-  async listOne(userId) {
+  async listOne(id) {
     // return an error response
-    if (!userId) {
+    if (!id) {
       throw Boom.badRequest('No user ID provided');
     }
 
     try {
       const [rows] = await pool.query(
         'SELECT * FROM Users WHERE id = ?',
-        [userId]
+        [id]
       );
 
       if (rows.length === 0) {
@@ -257,9 +257,9 @@ export class UserServices {
       delete theUser.password;
 
       return theUser;
-    } catch (error) {
+    } catch (err) {
       // return a Boom error if there's an exception finding the user
-      throw Boom.boomify(error, {
+      throw Boom.boomify(err, {
         message: 'Unable to find user',
       });
     }
@@ -281,9 +281,9 @@ export class UserServices {
       }
 
       return [...rows];
-    } catch (error) {
+    } catch (err) {
       // return a Boom error if there's an exception finding all users
-      throw Boom.boomify(error, {
+      throw Boom.boomify(err, {
         message: 'Unable to find users',
       });
     }

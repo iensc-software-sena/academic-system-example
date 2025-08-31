@@ -7,9 +7,15 @@ export const createOneUser = async (req, res, next) => {
 
   // Extract username and password from the request body
   const newUser = {
+    id: req.body.newUserData.id,
     username: req.body.newUserData.username,
     password: req.body.newUserData.password,
+    role: req.body.newUserData.role,
     email: req.body.newUserData.email,
+    phone: req.body.newUserData.phone,
+    address: req.body.newUserData.address,
+    registrationNumber: req.body.newUserData.registrationNumber,
+    program: req.body.newUserData.program,
     firstName: req.body.newUserData.firstName,
     middleName: req.body.newUserData.middleName,
     firstLastName: req.body.newUserData.firstLastName,
@@ -33,11 +39,14 @@ export const createOneUser = async (req, res, next) => {
       });
     }
 
-  } catch (error) {
+  } catch (err) {
+    if (Boom.isBoom(err)) {
+      return next(err);
+    }
     // Handle errors during user creation by sending a Boom error response
     const boomError = Boom.serverUnavailable(
       'Unable to create the user in the database',
-      error
+      err
     );
     // Pass the Boom error to the next middleware in the stack
     next(boomError);

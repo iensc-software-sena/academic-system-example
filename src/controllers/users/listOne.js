@@ -8,6 +8,11 @@ export const listOneUser = async (req, res, next) => {
   // Destructure the user ID from the request body
   const { id } = req.body;
 
+  // Validate if the user ID is sent.
+  if (!id) {
+    return next(Boom.badRequest('User ID is required for the search'));
+  }
+
   // Instantiate the UserServices class to manage user operations
   const userManager = new UserServices();
 
@@ -17,7 +22,7 @@ export const listOneUser = async (req, res, next) => {
 
     // If the user record is found, send a success response with the user data
     if (record) {
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
         message: 'User found successfully',
         // Include the new token in the response
@@ -31,11 +36,14 @@ export const listOneUser = async (req, res, next) => {
       });
     }
 
-  } catch (error) {
+  } catch (err) {
+    if (Boom.isBoom(err)) {
+      return next(err);
+    }
     // Handle errors during the user retrieval process by sending a Boom error response
     const boomError = Boom.serverUnavailable(
       'Unable to retrieve the user from the database',
-      error
+      err
     );
     // Pass the Boom error to the next middleware in the stack
     next(boomError);

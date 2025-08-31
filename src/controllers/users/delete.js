@@ -9,6 +9,11 @@ export const deleteOneUser = async (req, res, next) => {
   // Extract the user ID from the request body
   const { id } = req.body;
 
+  // Validate if the user ID is sent.
+  if (!id) {
+    return next(Boom.badRequest('User ID is required for deletion'));
+  }
+
   // Instantiate the UserServices class to manage the user operations
   const userManager = new UserServices();
 
@@ -18,7 +23,7 @@ export const deleteOneUser = async (req, res, next) => {
 
     // If the user is deleted successfully, send a success response
     if (response.status === 'DELETED SUCCESSFULLY') {
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
         message: 'User deleted successfully',
         // Include the new token in the response
@@ -26,11 +31,14 @@ export const deleteOneUser = async (req, res, next) => {
       });
     }
 
-  } catch (error) {
+  } catch (err) {
+    if (Boom.isBoom(err)) {
+      return next(err);
+    }
     // Handle errors during user deletion by sending a Boom error response
     const boomError = Boom.serverUnavailable(
       'Unable to delete the user from the database',
-      error
+      err
     );
     // Pass the Boom error to the next middleware in the stack
     next(boomError);

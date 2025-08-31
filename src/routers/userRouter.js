@@ -8,6 +8,7 @@ import { loginUser } from '../controllers/users/login.js';
 import { createOneUser } from '../controllers/users/create.js';
 import { deleteOneUser } from '../controllers/users/delete.js';
 import { updateOneUser } from '../controllers/users/update.js';
+import { updatePassword } from '../controllers/users/password.js';
 import { listOneUser } from '../controllers/users/listOne.js';
 import { listAllUsers } from '../controllers/users/listAll.js';
 
@@ -38,8 +39,18 @@ userRouter.post(
   '/update',
   // Middleware to verify the token before proceeding to the controller
   authAppVerifyToken,
-  // Controller function to update the reader
+  // Controller function to update the user data
   updateOneUser
+);
+
+// Define a POST route to update an user password
+userRouter.post(
+  // Route path to update a user
+  '/password',
+  // Middleware to verify the token before proceeding to the controller
+  authAppVerifyToken,
+  // Controller function to update the user password
+  updatePassword
 );
 
 // Define a POST route to delete an user

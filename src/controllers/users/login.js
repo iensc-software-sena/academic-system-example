@@ -8,6 +8,11 @@ export const loginUser = async (req, res, next) => {
   // Extract username and password from the request body
   const { username, password } = req.body.credentials;
 
+  // Validate if the username and password is sent.
+  if (!username || !password) {
+  return next(Boom.badRequest('Username and password are required'));
+}
+
   // Instantiate the UserServices class to manage user operations
   const userManager = new UserServices();
 
@@ -36,11 +41,14 @@ export const loginUser = async (req, res, next) => {
         // Handle any unexpected cases with a 500 error
         return next(Boom.badImplementation('Servicio no disponible'));
     }
-  } catch (error) {
+  } catch (err) {
+    if (Boom.isBoom(err)) {
+      return next(err);
+    }
     // Handle errors during the login process by returning a 503 error
     return next(Boom.serverUnavailable(
-      'No es posible verificar las credenciales del usuario en la base de datos',
-      error
+      'Unable to verify user credentials in the database',
+      err
     ));
   }
 };
