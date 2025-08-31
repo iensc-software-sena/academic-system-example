@@ -6,7 +6,7 @@ import { authAppVerifyToken } from
 // Import the controllers functions to manage user interfaces templates
 import { loginForm } from '../controllers/UI/loginForm.js';
 import { dashboard } from '../controllers/UI/dashboard.js';
-import { profile } from '../controllers/UI/profle.js';
+import { profile } from '../controllers/UI/profile.js';
 
 // Create a new Router instance
 export const UIRouter = Router();

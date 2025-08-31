@@ -1,5 +1,3 @@
-// Import the ValidationError from Sequelize to handle ORM-specific errors
-import { ValidationError } from 'sequelize';
 // Import Boom for HTTP-friendly error objects
 import Boom from '@hapi/boom';
 
@@ -28,19 +26,4 @@ export const boomErrorHandler = (err, req, res, next) => {
     // Pass the error to the next middleware
     next(err);
   }
-}
-
-
-export const ORMErrorHandler = (err, req, res, next) => {
-  // Check if the error is a Sequelize ValidationError
-  if (err instanceof ValidationError) {
-    // Send a 409 Conflict response with error details
-    res.status(409).json({
-      statusCode: 409,
-      message: err.name,
-      errors: err.errors
-    });
-  }
-  // Pass the error to the next middleware
-  next(err);
 }
