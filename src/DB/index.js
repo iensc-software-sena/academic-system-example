@@ -12,7 +12,7 @@ export const pool = createPool({
   // data base connection password
   password: config.dbUserPassword,
   // MySQL engine port (3306 is default port)
-  port: config.appPort || 3306,
+  port: config.dbPort || 3306,
   // data base schema name to connect
   database: config.dbName,
   // Queue connection requests if all are busy
