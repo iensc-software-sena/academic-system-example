@@ -1,11 +1,11 @@
 async function handleSubmit(event) {
   event.preventDefault();
 
-  const username = document.getElementById('username').value;
+  const userName = document.getElementById('username').value;
   const password = document.getElementById('password').value;
   const wrongInput = document.getElementById('wrong-input');
 
-  const credentials = { username, password };
+  const credentials = { userName, password };
 
   try {
     const response = await fetch('/app/v1/users/login', {

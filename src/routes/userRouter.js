@@ -28,7 +28,7 @@ userRouter.post(
   // Route path to create a user
   '/create',
   // Middleware to verify the token before proceeding to the controller
-  authAppVerifyToken,
+  //authAppVerifyToken,
   // Controller function to create the user
   createOneUser
 );

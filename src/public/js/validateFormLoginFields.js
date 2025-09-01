@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', () => {
   const usernameField = document.getElementById('username');
   const passwordField = document.getElementById('password');

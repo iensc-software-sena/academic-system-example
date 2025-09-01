@@ -14,12 +14,12 @@ import { config } from '../config/config.js'
 // create the user services class
 export class UserServices {
 
-  async login(username, password) {
+  async login(userName, password) {
     try {
-      // Find the user by their username in the d
-      const [rows] = await pool.query(
-        'SELECT * FROM Users WHERE username = ?',
-        [username]
+      // Find the user by their username in the data base
+      const [ rows ] = await pool.query(
+        'SELECT * FROM Users WHERE userName = ?',
+        [userName]
       );
 
       const userRecord = rows[0];
@@ -57,15 +57,21 @@ export class UserServices {
 
   async createOne(newUser) {
     try {
-      // searches the database if there is a user with this username
+      // searches the database if there is a user with this username or id
       const [rows] = await pool.query(
-        'SELECT * FROM Users WHERE username = ?',
-        [newUser.username]
+        'SELECT * FROM Users WHERE userName = ? OR id = ?',
+        [newUser.userName, newUser.id]
       );
 
       // if user exists, reject the user insertion
       if (rows.length > 0) {
-        throw Boom.conflict('Username already exists');
+        // Check which field is the repeater
+        if (rows.some(r => r.userName === newUser.userName)) {
+          throw Boom.conflict('Username already exists');
+        }
+        if (rows.some(r => r.id === newUser.id)) {
+          throw Boom.conflict('User ID already exists');
+        }
       }
 
       // hash the user password before it is recorded
@@ -75,7 +81,7 @@ export class UserServices {
       await pool.query(
         `INSERT INTO Users (
           id,
-          username,
+          userName,
           password,
           role,
           email,
@@ -91,7 +97,7 @@ export class UserServices {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           newUser.id,
-          newUser.username,
+          newUser.userName,
           hash,
           newUser.role,
           newUser.email,
@@ -127,7 +133,7 @@ export class UserServices {
       const [result] = await pool.query(
         `UPDATE Users
          SET
-          username = ?,
+          userName = ?,
           role = ?,
           email = ?,
           phone = ?,
@@ -140,7 +146,7 @@ export class UserServices {
           secondLastName = ?
          WHERE id = ?`,
         [
-          newUserData.username,
+          newUserData.userName,
           newUserData.role,
           newUserData.email,
           newUserData.phone,
@@ -170,16 +176,16 @@ export class UserServices {
     }
   }
 
-  async updatePassword(id, username, email, newPassword) {
-    if (!id || !username || !email || !newPassword) {
+  async updatePassword(id, userName, email, newPassword) {
+    if (!id || !userName || !email || !newPassword) {
       throw Boom.badRequest('Missing data for password update');
     }
 
     try {
       // Verify that the user exists with the given ID, username, and email
       const [rows] = await pool.query(
-        'SELECT * FROM Users WHERE id = ? AND username = ? AND email = ?',
-        [id, username, email]
+        'SELECT * FROM Users WHERE id = ? AND userName = ? AND email = ?',
+        [id, userName, email]
       );
 
       if (rows.length === 0) {
@@ -269,7 +275,7 @@ export class UserServices {
     try {
       // save all records in the constant
       const [rows] = await pool.query(
-        `SELECT id, username, role, email, phone, address, registrationNumber,
+        `SELECT id, userName, role, email, phone, address, registrationNumber,
                 program, firstName, middleName, firstLastName, secondLastName
          FROM Users
          ORDER BY id ASC`

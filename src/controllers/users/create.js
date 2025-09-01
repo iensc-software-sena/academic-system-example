@@ -8,7 +8,7 @@ export const createOneUser = async (req, res, next) => {
   // Extract username and password from the request body
   const newUser = {
     id: req.body.newUserData.id,
-    username: req.body.newUserData.username,
+    userName: req.body.newUserData.userName,
     password: req.body.newUserData.password,
     role: req.body.newUserData.role,
     email: req.body.newUserData.email,

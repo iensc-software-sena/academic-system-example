@@ -6,14 +6,14 @@ import Boom from '@hapi/boom';
 export const updatePassword = async (req, res, next) => {
 
   // Extract user credentials from the request body
-  const { id, username, email, newPassword } = req.body.credentials;
+  const { id, userName, email, newPassword } = req.body.credentials;
 
   // Instantiate the UserServices class to manage user operations
   const userManager = new UserServices();
 
   try {
     // Attempt to update the user password in the database
-    const response = await userManager.updatePassword(id, username, email, newPassword);
+    const response = await userManager.updatePassword(id, userName, email, newPassword);
 
     // If the update is successful, return a 201 response with a success message
     if (response.status === 'PASSWORD UPDATED SUCCESSFULLY') {

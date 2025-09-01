@@ -2,14 +2,18 @@
 import { UserServices } from '../../services/userServices.js';
 // Import Boom to create HTTP-friendly error objects
 import Boom from '@hapi/boom';
+// Import jwt library to manage tokens
+import jwt from 'jsonwebtoken';
+// Import configuration settings
+import { config } from '../../config/config.js';
 
 export const loginUser = async (req, res, next) => {
 
   // Extract username and password from the request body
-  const { username, password } = req.body.credentials;
+  const { userName, password } = req.body.credentials;
 
   // Validate if the username and password is sent.
-  if (!username || !password) {
+  if (!userName || !password) {
   return next(Boom.badRequest('Username and password are required'));
 }
 
@@ -18,7 +22,7 @@ export const loginUser = async (req, res, next) => {
 
   try {
     // Attempt to log in the user by validating the credentials
-    const response = await userManager.login(username, password);
+    const response = await userManager.login(userName, password);
 
     let message = "";
 
@@ -33,10 +37,14 @@ export const loginUser = async (req, res, next) => {
         message = "Contraseña incorrecta. Por favor verifique e intente de nuevo.";
         return res.status(401).render("authError", { message: message, type: "password" });
       case 'logged':
-        // If login is successful, return a 200, send a cookie with the token,
-        // and dashboard view
+        // If login is successful send a cookie with the token
         res.cookie('authentication', response.token, { httpOnly: true });
-        return res.status(200).render("dashboard");
+        // Decode the token to get the user ID
+        const decoded = jwt.verify(response.token, config.authAppJwtKey);
+        // Get username from DB using the ID in the token
+        const userRecord = await userManager.listOne(decoded.id);
+        // Finally render the dashboard view with the username data
+        return res.status(200).render("dashboard", { userName: userRecord.userName} );
       default:
         // Handle any unexpected cases with a 500 error
         return next(Boom.badImplementation('Servicio no disponible'));
