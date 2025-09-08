@@ -201,7 +201,7 @@ EndPoint: **/app/v1/users/listone**
 Body:
 ```JSON
 {
-    "id": 1036543782,
+    "id": 1036543782
 }
 ```
 Respuesta:
