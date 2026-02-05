@@ -5,6 +5,7 @@ import { authAppVerifyToken } from
 '../middlewares/tokenHandlers/authAppTokenHandler.js';
 // Import the controllers functions to manage user interfaces templates
 import { loginForm } from '../controllers/UI/loginForm.js';
+import { registerForm } from '../controllers/UI/registerForm.js';
 import { dashboard } from '../controllers/UI/dashboard.js';
 import { profile } from '../controllers/UI/profile.js';
 
@@ -18,6 +19,15 @@ UIRouter.get(
   // Controller function to render a login template
   loginForm
 );
+
+// Define a GET route for user register view
+UIRouter.get(
+  // Route path display the user register view
+  '/register',
+  // Controller function to render a user register template
+  registerForm
+);
+
 
 // Define a GET route for dashboard view
 UIRouter.get(
