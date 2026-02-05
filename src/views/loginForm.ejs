@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="/styles/loginForm.css" type="text/css">
   <script type="application/javascript" src="/js/validateFormLoginFields.js"></script>
   <script type="application/javascript" src="/js/login.js"></script>
+  <script type="application/javascript" src="/js/redirectView.js"></script>
 </head>
 
 <body>
@@ -36,6 +37,9 @@
       </form>
       <div class="linksBox">
         <p class="support">Contactar a soporte</p>
+        <p class="register" data-path="/app/v1/register" onclick="redirect(this)">
+          Registrarse
+        </p>
         <p class="forgot">Olvidé contraseña</p>
       </div>
     </section>

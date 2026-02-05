@@ -154,8 +154,7 @@ body {
   font-size: 1.3rem;
 }
 
-.support,
-.forgot {
+.support, .forgot, .register {
   margin-top: 0.8rem;
   color: var(--blue-light);
   cursor: pointer;
@@ -163,7 +162,8 @@ body {
 }
 
 .support:hover,
-.forgot:hover {
+.forgot:hover,
+.register:hover {
   text-decoration: underline;
   color: var(--purple);
 }
