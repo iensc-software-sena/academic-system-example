@@ -1,0 +1,4044 @@
+This file is a merged representation of the entire codebase, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of the entire repository's contents.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+src/
+  config/
+    config.js
+  controllers/
+    UI/
+      dashboard.js
+      loginForm.js
+      profile.js
+      registerForm.js
+    users/
+      create.js
+      delete.js
+      listAll.js
+      listOne.js
+      login.js
+      password.js
+      update.js
+  DB/
+    index.js
+  libraries/
+    DBConnection.js
+    netConfig.js
+  middlewares/
+    tokenHandlers/
+      authAppTokenHandler.js
+    errorHandler.js
+  public/
+    js/
+      login.js
+      redirectView.js
+      registerForm.js
+      validateFormLoginFields.js
+    styles/
+      authError.css
+      dashboard.css
+      loginForm.css
+      profile.css
+      registerForm.css
+  routes/
+    index.js
+    UIRouter.js
+    userRouter.js
+  services/
+    userServices.js
+  utils/
+    auth/
+      authApp/
+        strategies/
+          jwt.strategy.js
+        tokenData.js
+      index.js
+      passwordHash.js
+      tokenSign.js
+      tokenVerify.js
+  views/
+    authError.ejs
+    dashboard.ejs
+    loginForm.ejs
+    profile.ejs
+    registerForm.ejs
+  app.js
+.editorconfig
+.eslintrc.json
+.gitignore
+AGENTS.md
+docker-compose.yml
+LICENSE
+nodemon.json
+package.json
+README.md
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="AGENTS.md">
+# AGENTS.md
+
+Guía para cualquier agente o modelo de IA que implemente código en este proyecto (`academic-system-example`).
+Objetivo: cuando se pida un nuevo servicio, controlador, router o vista, el resultado debe ser **indistinguible del código existente**. Antes de escribir, lee un ejemplo real (`src/services/userServices.js`, `src/controllers/users/*.js`, `src/routes/userRouter.js`) y replica el patrón.
+
+---
+
+## 1. Stack y reglas generales
+
+- **Runtime:** Node.js con **ES Modules** (`"type": "module"` en `package.json`). Usa `import` / `export`, nunca `require` ni `module.exports`.
+- **Framework:** Express 4. **Vistas:** EJS. **BD:** MySQL 8 con `mysql2/promise` (pool). **Auth:** JWT (`jsonwebtoken`) en cookie `httpOnly` + `bcryptjs`. **Errores:** `@hapi/boom`.
+- **Toda importación local lleva la extensión `.js`** (ej. `'../services/userServices.js'`).
+- No agregues dependencias nuevas sin que se pida explícitamente. No introduzcas ORMs (Sequelize, Prisma, etc.), TypeScript, ni frameworks de frontend.
+- **Idioma:**
+  - Identificadores de código, nombres de archivos, comentarios y mensajes JSON de la API: **inglés**.
+  - Textos visibles al usuario en vistas EJS y mensajes de error renderizados (`authError`): **español**.
+
+## 2. Estilo de código (`.editorconfig` + `.eslintrc.json`)
+
+- Indentación de **2 espacios**, saltos de línea `LF`, `UTF-8`, línea final en blanco.
+- **Comillas simples** y **punto y coma siempre** (`semi: always`, `quotes: single`).
+- `const` por defecto; `let` solo si se reasigna; nunca `var`.
+- Funciones flecha para controladores, middlewares y utilidades; `class` con métodos `async` para servicios.
+- `async/await` con `try/catch`. No uses `.then()` encadenado salvo que envuelvas una API basada en callbacks.
+- **Comentarios en inglés, sobre la línea que explican**, con estilo didáctico (este proyecto se usa para enseñar): comenta cada import, cada bloque lógico y cada decisión no obvia. Ejemplo: `// Import Boom for handling HTTP-friendly error objects`.
+- Evita `console.log` salvo en arranque/diagnóstico (`no-console: warn`).
+
+## 3. Estructura de carpetas
+
+```
+src/
+  app.js                     # Bootstrap de Express: middlewares globales, estáticos, vistas, routers, errores
+  config/config.js           # ÚNICO lugar donde se lee process.env
+  DB/index.js                # Pool de conexiones mysql2 (export const pool)
+  libraries/                 # Utilidades de infraestructura (DBConnection, netConfig)
+  routes/
+    index.js                 # Registra todos los routers bajo /app/v1
+    UIRouter.js              # Rutas GET que renderizan vistas
+    <entity>Router.js        # Un router por entidad (ej. userRouter.js)
+  controllers/
+    UI/<view>.js             # Un controlador por vista (render)
+    <entities>/<action>.js   # Un archivo por acción (create.js, delete.js, listAll.js...)
+  services/<entity>Services.js  # Lógica de negocio + acceso a BD (una clase por entidad)
+  middlewares/
+    errorHandler.js          # logError, boomErrorHandler, errorHandler
+    tokenHandlers/           # Middlewares de autenticación
+  utils/auth/                # Hash, firma y verificación de tokens, estrategia passport
+  views/<view>.ejs           # Plantillas EJS
+  public/
+    styles/<view>.css        # Un CSS por vista
+    js/<view>.js             # JS de cliente (fetch, validaciones, redirecciones)
+```
+
+**Flujo de una petición:** `Router → (middleware auth) → Controller → Service → pool (SQL)`, y los errores viajan con `next(err)` hacia `logError → boomErrorHandler → errorHandler`.
+
+## 4. Responsabilidad de cada capa (no mezclar)
+
+| Capa | Hace | NO hace |
+|---|---|---|
+| **Router** | Declara método, path y encadena middleware + controlador | Lógica, SQL, validaciones |
+| **Controller** | Lee `req.body`/`req.user`, valida presencia de datos, llama al servicio, arma la respuesta HTTP, traduce errores a Boom | SQL, hashing, reglas de negocio |
+| **Service** | Reglas de negocio, SQL parametrizado, hashing, firma de tokens; lanza errores Boom; retorna objetos `{ status: '...' }` o datos | Tocar `req`/`res`, decidir códigos HTTP de éxito |
+| **Middleware** | Autenticación/renovación de token, manejo de errores | Lógica de negocio |
+| **config** | Leer variables de entorno | Nada más |
+
+## 5. Nomenclatura
+
+| Elemento | Convención | Ejemplos |
+|---|---|---|
+| Archivos JS | `camelCase.js` | `userServices.js`, `tokenSign.js`, `listAll.js` |
+| Routers (archivo y export) | `<entity>Router` | `userRouter.js` → `export const userRouter` |
+| Clase de servicio | `PascalCase` + `Services` | `UserServices` |
+| Métodos de servicio | `camelCase` verbo corto | `login`, `createOne`, `updateOne`, `updatePassword`, `deleteOne`, `listOne`, `listAll` |
+| Controladores | `camelCase`, verbo + `One`/`All` + Entidad (singular/plural) | `createOneUser`, `updateOneUser`, `deleteOneUser`, `listOneUser`, `listAllUsers`, `loginUser` |
+| Archivo de controlador | Nombre de la acción | `create.js`, `update.js`, `delete.js`, `listOne.js`, `listAll.js` |
+| Controladores de vista | Nombre de la vista | `dashboard`, `profile`, `loginForm` |
+| Instancia del servicio | `<entity>Manager` | `const userManager = new UserServices();` |
+| Variables / propiedades | `camelCase` | `userName`, `firstLastName`, `registrationNumber` |
+| Variables de entorno | `UPPER_SNAKE_CASE` → propiedad `camelCase` en `config` | `AUTH_APP_JWT_SECRET_KEY` → `config.authAppJwtKey` |
+| Tablas SQL | `PascalCase` plural | `Users` |
+| Columnas SQL | `camelCase` (igual que las propiedades JS) | `userName`, `createdAt` |
+| Estados de retorno del servicio | `'UPPER CASE WITH SPACES'` para éxito de escritura | `'CREATED SUCCESSFULLY'`, `'UPDATED SUCCESSFULLY'`, `'DELETED SUCCESSFULLY'`, `'PASSWORD UPDATED SUCCESSFULLY'` |
+| Estados de login | `'lowercase words'` | `'user not found'`, `'wrong password'`, `'logged'` |
+| Vistas / CSS / JS cliente | Mismo nombre base por vista | `profile.ejs`, `profile.css` |
+
+## 6. Configuración y variables de entorno
+
+- Nunca uses `process.env` fuera de `src/config/config.js`. Si necesitas una variable nueva:
+  1. Añádela al objeto `config` con comentario en inglés y nombre `camelCase`.
+  2. Impórtala donde se necesite: `import { config } from '../config/config.js';`
+- Variables actuales: `APP_PORT`, `DB_USER`, `DB_USER_PASSWORD`, `DB_HOST`, `DB_NAME`, `DB_PORT`, `AUTH_APP_JWT_SECRET_KEY`.
+- Nunca escribas secretos ni credenciales en el código.
+
+## 7. Base de datos
+
+- Usa siempre el pool: `import { pool } from '../DB/index.js';` y `pool.query(sql, [params])`.
+- **Siempre consultas parametrizadas con `?`**. Jamás concatenes valores en el SQL.
+- Desestructura el resultado: `const [rows] = await pool.query(...)`; para escrituras `const [result] = ...` y valida `result.affectedRows`.
+- Nunca devuelvas el hash de contraseña: en `listOne` se hace `delete theUser.password`, en `listAll` se enumeran columnas explícitas (sin `SELECT *`). Sigue ese criterio en toda consulta de lectura nueva.
+- Cuando agregues una tabla, documenta su `CREATE TABLE` en el `README.md` (mismo formato que `Users`: `IF NOT EXISTS`, `createdAt` y `updatedAt` con `TIMESTAMP`).
+
+## 8. Plantilla de SERVICIO
+
+Archivo: `src/services/<entity>Services.js`. Una clase por entidad, métodos `async`, sin `req`/`res`.
+
+```js
+// import the data base pool of connections
+import { pool } from '../DB/index.js';
+// boom allows managing possible errors
+import Boom from '@hapi/boom';
+
+// create the <entity> services class
+export class CourseServices {
+
+  async createOne(newCourse) {
+    try {
+      // searches the database if there is a course with this code
+      const [rows] = await pool.query(
+        'SELECT * FROM Courses WHERE code = ?',
+        [newCourse.code]
+      );
+
+      // if the course exists, reject the insertion
+      if (rows.length > 0) {
+        throw Boom.conflict('Course code already exists');
+      }
+
+      // create a new record in the database
+      await pool.query(
+        'INSERT INTO Courses (code, name) VALUES (?, ?)',
+        [newCourse.code, newCourse.name]
+      );
+
+      // return a success response
+      return { status: 'CREATED SUCCESSFULLY' };
+    } catch (err) {
+      // Return a Boom error if there's an exception
+      throw Boom.boomify(err, {
+        message: 'Unable to create new course',
+      });
+    }
+  }
+
+  async listOne(id) {
+    // return an error response
+    if (!id) {
+      throw Boom.badRequest('No course ID provided');
+    }
+
+    try {
+      const [rows] = await pool.query(
+        'SELECT * FROM Courses WHERE id = ?',
+        [id]
+      );
+
+      if (rows.length === 0) {
+        // return an error response
+        throw Boom.notFound('Course not found');
+      }
+
+      return rows[0];
+    } catch (err) {
+      // return a Boom error if there's an exception finding the course
+      throw Boom.boomify(err, {
+        message: 'Unable to find course',
+      });
+    }
+  }
+}
+```
+
+Reglas del servicio:
+- Valida argumentos obligatorios **antes** del `try` y lanza `Boom.badRequest(...)`.
+- Usa `Boom.notFound`, `Boom.conflict`, `Boom.badRequest` para errores esperados; envuelve el resto con `Boom.boomify(err, { message })` en el `catch`.
+- Escrituras retornan `{ status: 'XXX SUCCESSFULLY' }`; lecturas retornan el dato (objeto o arreglo; `listAll` retorna `[]` si no hay filas).
+- Contraseñas: `hashPassword` (`utils/auth/passwordHash.js`) al guardar, `bcrypt.compare` al validar. Tokens: `signUserToken(payload, config.authAppJwtKey, '1h')`.
+- Nombres de métodos del CRUD: `createOne`, `updateOne`, `deleteOne`, `listOne`, `listAll`.
+
+## 9. Plantilla de CONTROLADOR
+
+Archivo: `src/controllers/<entities>/<action>.js`. **Un archivo = una función exportada.**
+
+```js
+// Import the CourseServices class from the courseServices module
+import { CourseServices } from '../../services/courseServices.js';
+// Import Boom for handling HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const listOneCourse = async (req, res, next) => {
+
+  // Destructure the course ID from the request body
+  const { id } = req.body;
+
+  // Validate if the course ID is sent.
+  if (!id) {
+    return next(Boom.badRequest('Course ID is required for the search'));
+  }
+
+  // Instantiate the CourseServices class to manage course operations
+  const courseManager = new CourseServices();
+
+  try {
+    // Attempt to find the course record by ID
+    const record = await courseManager.listOne(id);
+
+    // If the record is found, send a success response with the data
+    return res.status(200).json({
+      success: true,
+      message: 'Course found successfully',
+      // Include the new token in the response
+      authentication: res.locals.newUserToken,
+      course: record
+    });
+
+  } catch (err) {
+    // Let Boom errors thrown by the service pass through untouched
+    if (Boom.isBoom(err)) {
+      return next(err);
+    }
+    // Handle unexpected errors by sending a Boom error response
+    const boomError = Boom.serverUnavailable(
+      'Unable to retrieve the course from the database',
+      err
+    );
+    // Pass the Boom error to the next middleware in the stack
+    next(boomError);
+  }
+};
+```
+
+Reglas del controlador:
+- Firma siempre `(req, res, next)`.
+- Valida la presencia de datos del body y responde con `return next(Boom.badRequest('...'))`.
+- Instancia el servicio dentro del controlador: `const <entity>Manager = new <Entity>Services();`.
+- **Formato de respuesta JSON estándar:** `{ success: boolean, message: string, authentication: res.locals.newUserToken, <data> }`. Códigos: `200` lectura/actualización/eliminación, `201` creación (y cambio de contraseña), `404` no encontrado.
+- Dentro del `catch`: primero `if (Boom.isBoom(err)) return next(err);`, luego envolver con `Boom.serverUnavailable('Unable to ... ', err)` (o `Boom.badImplementation` / `Boom.notImplemented` en vistas) y `next(boomError)`. **Nunca** hagas `res.status(500).json(...)` directo.
+- Los datos del usuario autenticado se leen de `req.user` (lo asigna el middleware), p. ej. `const { id } = req.user;`.
+- Payloads de entrada: se envuelven en un objeto con nombre (`{ newUserData }`, `{ credentials }`, `{ id, newUserData }`). Mantén ese patrón para datos nuevos (`{ newCourseData }`).
+
+### Controladores de vista (`controllers/UI/`)
+
+```js
+export const profile = async (req, res, next) => {
+  const userManager = new UserServices();
+  try {
+    // Extract the user id that the middleware saved in req.user
+    const { id } = req.user;
+    const userData = await userManager.listOne(id);
+    // Return rendering the template and send the user data object
+    res.render('profile', { userData: userData });
+  } catch (err) {
+    const boomError = Boom.notImplemented(
+      'No es posible renderizar la vista de perfil de usuario.',
+      err);
+    next(boomError);
+  }
+};
+```
+
+## 10. Plantilla de ROUTER y registro
+
+Archivo: `src/routes/<entity>Router.js`. Cada ruta lleva **un comentario por argumento** (path, middleware, controlador).
+
+```js
+// Import the Router class from Express
+import { Router } from "express";
+// Import the middleware to verify tokens from the authentication app
+import { authAppVerifyToken } from
+'../middlewares/tokenHandlers/authAppTokenHandler.js';
+// Import the controllers functions to manage courses
+import { createOneCourse } from '../controllers/courses/create.js';
+import { listOneCourse } from '../controllers/courses/listOne.js';
+
+// Create a new Router instance
+export const courseRouter = Router();
+
+// Define a POST route to create a course
+courseRouter.post(
+  // Route path to create a course
+  '/create',
+  // Middleware to verify the token before proceeding to the controller
+  authAppVerifyToken,
+  // Controller function to create the course
+  createOneCourse
+);
+
+// Define a POST route to list a course
+courseRouter.post(
+  // Route path to list a course
+  '/listone',
+  authAppVerifyToken,
+  // Controller function to list a course
+  listOneCourse
+);
+```
+
+Registro obligatorio en `src/routes/index.js`:
+
+```js
+// Import the courseRouter for handling course-related routes
+import { courseRouter } from "./courseRouter.js";
+// ...
+// Use the courseRouter for handling '/courses' routes under '/app/v1'
+router.use('/courses', courseRouter);
+```
+
+Convenciones de rutas:
+- Prefijo global: **`/app/v1`**; recurso en plural: `/app/v1/courses/...`.
+- Sufijos de acción en minúscula, sin guiones: `/create`, `/update`, `/delete`, `/listone`, `/listall`, `/password`, `/login`.
+- **`POST`** para todo lo que recibe body (crear, actualizar, eliminar, listar uno); **`GET`** solo para `listall` y vistas.
+- Toda ruta que no sea de acceso público (login y registro) lleva `authAppVerifyToken`.
+- Rutas de vistas (HTML) van en `UIRouter.js`, con `GET`, y las vistas protegidas también usan `authAppVerifyToken`.
+
+## 11. Autenticación
+
+- El token JWT viaja en la cookie **`authentication`** (`httpOnly: true`). Payload mínimo: `{ id }`. Expiración: `'1h'`.
+- `authAppVerifyToken` valida la cookie, **renueva** el token, y asigna `req.user = decoded`. Los controladores nunca verifican el JWT por su cuenta (usa el middleware).
+- Firma con `signUserToken`, verifica con `verifyToken`; no llames `jwt.sign`/`jwt.verify` nuevos en controladores o servicios sin necesidad.
+- Contraseñas: `bcryptjs`, 11 rondas (`hashPassword`). Nunca almacenar ni devolver contraseñas en texto plano.
+
+## 12. Manejo de errores
+
+- Todo error debe terminar en `next(err)` para que lo procesen `logError → boomErrorHandler → errorHandler` (registrados al final de `app.js`).
+- Errores de dominio: siempre objetos **Boom** (`Boom.badRequest`, `notFound`, `conflict`, `serverUnavailable`, `badImplementation`, `notImplemented`).
+- Errores de autenticación en vistas: `res.status(401|403|404).render('authError', { message, type })` con `type` en `user | password | no-token | token-exp | token-inv` y `message` en español.
+
+## 13. Vistas y frontend
+
+- Plantillas en `src/views/<view>.ejs`, `lang="es"`, con `<link>` al CSS `/styles/<view>.css` y scripts desde `/js/`.
+- **HTML + CSS + JavaScript vanilla.** Sin frameworks ni librerías de UI (solo Google Fonts / Font Awesome por CDN como ya se hace).
+- CSS: un archivo por vista; reset `* { margin: 0; padding: 0; box-sizing: border-box; }`; `html { font-size: 62.5%; }` (1rem = 10px) y **medidas en `rem`**; colores en variables `:root` con la paleta existente (`--blue-light: #667eea`, `--purple: #764ba2`, `--gray: #464646`, `--dark-gray: #d7d7d7`, `--white`, `--red`, `--yellow`); fondo `linear-gradient(135deg, var(--blue-light), var(--purple))`; tarjetas blancas con `border-radius` y `box-shadow`; animación `fadeIn`; media queries para móvil.
+- Clases en CSS: `kebab-case` (`.dashboard-card`, `.profile-header`, `.form-button`).
+- JS de cliente (`public/js/`): funciones globales simples (`handleSubmit`, `handleRegister`, `redirect`), `fetch` a `/app/v1/...` con `Content-Type: application/json` y el mismo wrapper de body (`{ credentials }`, `{ newUserData }`); mostrar errores en un `<p id="wrong-input">`. Navegación con `data-path` + `onclick="redirect(this)"`.
+- Para nuevas vistas: crea `controllers/UI/<view>.js`, `views/<view>.ejs`, `public/styles/<view>.css`, (opcional) `public/js/<view>.js` y registra la ruta `GET` en `UIRouter.js`.
+
+## 14. Checklist para implementar una nueva entidad/funcionalidad
+
+1. **SQL:** definir la tabla (PascalCase plural, columnas camelCase) y documentarla en `README.md`.
+2. **Service:** `src/services/<entity>Services.js` con clase `<Entity>Services` y métodos `createOne/updateOne/deleteOne/listOne/listAll` (los que apliquen).
+3. **Controllers:** `src/controllers/<entities>/<action>.js`, uno por acción, con el formato de respuesta estándar.
+4. **Router:** `src/routes/<entity>Router.js` y registrarlo en `src/routes/index.js` bajo `/<entities>`.
+5. **Auth:** proteger con `authAppVerifyToken` lo que no sea público.
+6. **(Opcional) UI:** vista EJS + CSS + JS + controlador UI + ruta en `UIRouter.js`.
+7. **Docs:** añadir cada endpoint nuevo a la sección "Uso de la aplicación" del `README.md` (método, endpoint, body JSON, respuesta), con el mismo formato.
+8. Verificar: comillas simples, `;`, 2 espacios, imports con `.js`, comentarios en inglés, ninguna lectura de `process.env` fuera de `config.js`.
+
+## 15. Inconsistencias conocidas (NO las repliques)
+
+El código actual tiene detalles que no son el estándar deseado; al escribir código nuevo sigue la regla, no el desliz:
+
+- Algunos archivos usan comillas dobles (`routes/index.js`, `userRouter.js`, `app.js`): el estándar es **comillas simples**.
+- Faltan puntos y coma en algunos lugares (`password.js`, `update.js`, `authError` render): usa siempre `;`.
+- `res.locals.newUserToken` no se asigna en ningún middleware (el middleware renueva el token en la cookie): mantener la clave `authentication` en las respuestas por consistencia, pero no asumir que trae valor.
+- `utils/auth/authApp/tokenData.js` importa `../../config/config.js` (ruta incorrecta) y hay redundancia `express.json()` + `bodyParser.json()` en `app.js`: no copiar.
+- La ruta `/users/create` tiene `authAppVerifyToken` comentado por ser registro público; no dejes middleware comentado en código nuevo, decide explícitamente si la ruta es pública o protegida.
+- `password.js` no valida la presencia de `req.body.credentials` antes de desestructurar: valida siempre el body antes de usarlo.
+- Textos con "sección" donde corresponde "sesión" (login/errores): en textos nuevos escribe "sesión".
+- `docker-compose.yml` usa `DB_PASSWORD` mientras `config.js` lee `DB_USER_PASSWORD`: mantener ambas coherentes al tocar variables de entorno.
+- Los imports de código suelto (`const passport = import(...)` en `app.js`) no deben replicarse; usa imports estáticos.
+
+## 16. Qué NO hacer
+
+- No poner SQL en controladores ni `req`/`res` en servicios.
+- No crear un archivo de controlador con varias acciones ni un servicio con funciones sueltas (usa la clase).
+- No responder errores con `res.status(...).json(...)` directo desde controladores/servicios; usa Boom + `next`.
+- No cambiar la estructura de carpetas, el prefijo `/app/v1`, el formato de respuesta ni la paleta de estilos.
+- No introducir TypeScript, ORMs, frameworks de frontend, ni convertir a CommonJS.
+- No omitir los comentarios explicativos en inglés (el proyecto es material didáctico).
+</file>
+
+<file path="docker-compose.yml">
+services:
+  academic-system-db:
+    image: mysql:8.0
+    container_name: academic-system-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3355:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - academic-system-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: academic-system-rdbms
+    environment:
+      PMA_HOST: academic-system-db
+    ports:
+      - "8080:80"
+    depends_on:
+      academic-system-db:
+        condition: service_healthy
+    networks:
+      - academic-system-network
+
+volumes:
+  db_data:
+
+networks:
+  academic-system-network:
+    driver: bridge
+</file>
+
+<file path="src/controllers/UI/loginForm.js">
+// Import Boom for handling HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const loginForm = async (req, res, next) => {
+  try {
+    res.clearCookie('authentication').render('loginForm');
+  } catch (err) {
+    const boomError = Boom.notImplemented(
+      'No es posible renderizar la vista de formulario de inicio de sección',
+      err);
+    next(boomError);
+  }
+};
+</file>
+
+<file path="src/controllers/UI/registerForm.js">
+// Import Boom for handling HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const registerForm = async (req, res, next) => {
+  try {
+    res.clearCookie('authentication').render('registerForm');
+  } catch (err) {
+    const boomError = Boom.notImplemented(
+      'No es posible renderizar la vista de formulario de registro de usuario',
+      err);
+    next(boomError);
+  }
+};
+</file>
+
+<file path="src/libraries/DBConnection.js">
+import { pool } from "../DB/index.js";
+
+export const testConnection = async () => {
+  try {
+    // get one connection from the pool
+    const connection = await pool.getConnection();
+    // test connection with a simple ping
+    await connection.ping();
+    console.log("✅ Connection to the database has been established successfully.");
+    // release the connection back to the pool
+    connection.release();
+  } catch (err) {
+    console.error("❌ Impossible to connect to the database:", err.message);
+  }
+};
+</file>
+
+<file path="src/libraries/netConfig.js">
+// Import the 'os' module to interact with the operating system
+import os from 'os';
+
+// Import the configuration object from the config file
+import { config } from "../config/config.js";
+
+// Get the network interfaces from the operating system
+const interfaces = os.networkInterfaces();
+
+// Variable to store the machine's IP address
+let ipAddress;
+
+// Loop through the network interfaces to find a non-internal IPv4 address
+for (const interfaceName in interfaces) {
+    const theInterface = interfaces[interfaceName];
+    for (const network of theInterface) {
+        // Check if the network is not internal
+        // (i.e., not a loopback address) and is IPv4
+        if (!network.internal && network.family === 'IPv4') {
+            // Store the IP address
+            ipAddress = network.address;
+            // Break the loop once the IP address is found
+            break;
+        }
+    }
+    // Break the outer loop if the IP address is already found
+    if (ipAddress) break;
+}
+
+// If no IP address is found, log an error message and exit the
+// process with an error code
+if (!ipAddress) {
+    console.error(`Could not obtain the machine's IP address.`);
+    process.exit(1);
+}
+
+// Export the obtained IP address for use in other parts of the application
+export const theIPAddress = ipAddress;
+
+// Export the port from the configuration, defaulting to 3333 if not set
+export const port = config.appPort || 3333;
+</file>
+
+<file path="src/middlewares/tokenHandlers/authAppTokenHandler.js">
+import { config } from '../../config/config.js';
+import { signUserToken } from '../../utils/auth/tokenSign.js';
+import jwt from 'jsonwebtoken';
+
+export const authAppVerifyToken = (req, res, next) => {
+
+  const authenticationToken = req.cookies.authentication;
+
+  let message = "";
+
+  // Check for the presence of the authentication token
+  if (!authenticationToken) {
+    res.clearCookie('authentication');
+    message = "Acceso denegado. Para acceder a este recurso, por favor inicie sección.";
+    return res.status(403).render("authError", { message: message, type: "no-token" });
+  }
+
+  // Verify the token using the secret key
+  jwt.verify(authenticationToken, config.authAppJwtKey, (err, decoded) => {
+    if (err) {
+      // Handle specific JWT errors
+      if (err.name === 'TokenExpiredError') {
+        res.clearCookie('authentication');
+        message = "La sesión se ha finalizado, por favor inicie sección e inténtelo de nuevo.";
+        return res.status(401).render("authError", { message: message, type: "token-exp" });
+      } else {
+        res.clearCookie('authentication');
+        message = "Acceso denegado. Los datos del usuario no son validos, por favor inicie sección e inténtelo de nuevo.";
+        return res.status(401).render("authError", { message: message, type: "token-inv" });
+      }
+    }
+
+    // Extract user data from the decoded token
+    const userData = {
+      id: decoded.id,
+    };
+
+    // Regenerate a new token for the user
+    const newUserToken = signUserToken(userData, config.authAppJwtKey, '1h');
+
+    // Send the new token in a cookie to the client
+    res.cookie('authentication', newUserToken, { httpOnly: true });
+
+    // Attach user data to the request object for later use
+    req.user = decoded;
+
+    // Proceed to the next middleware or controller
+    next();
+  });
+};
+</file>
+
+<file path="src/public/js/redirectView.js">
+function redirect(container) {
+  const path = container.getAttribute('data-path');
+  window.location.href = path;
+}
+</file>
+
+<file path="src/public/js/registerForm.js">
+async function handleRegister(event) {
+  event.preventDefault();
+
+  const wrongInput = document.getElementById('wrong-input');
+
+  const newUserData = {
+    id: Number(document.getElementById('id').value),
+    userName: document.getElementById('userName').value,
+    password: document.getElementById('password').value,
+    role: document.getElementById('role').value,
+    email: document.getElementById('email').value,
+    phone: document.getElementById('phone').value,
+    address: document.getElementById('address').value,
+    registrationNumber: document.getElementById('registrationNumber').value,
+    program: document.getElementById('program').value,
+    firstName: document.getElementById('firstName').value,
+    middleName: document.getElementById('middleName').value,
+    firstLastName: document.getElementById('firstLastName').value,
+    secondLastName: document.getElementById('secondLastName').value
+  };
+
+  try {
+    const response = await fetch('/app/v1/users/create', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ newUserData })
+    });
+
+    const data = await response.json();
+
+    if (response.status === 201 && data.success === true) {
+      // Registro exitoso → volver al login
+      window.location.href = '/app/v1/';
+    } else {
+      wrongInput.textContent =
+        data.message || 'Error al crear el usuario';
+      wrongInput.style.display = 'block';
+    }
+
+  } catch (error) {
+    wrongInput.textContent = 'Error de conexión con el servidor';
+    wrongInput.style.display = 'block';
+  }
+}
+</file>
+
+<file path="src/public/styles/authError.css">
+/* universal properties*/
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* setting rem measure */
+html {
+  font-size: 62.5%;
+  font-family: 'Readex Pro', sans-serif;
+}
+
+:root {
+  --dark-gray: #d7d7d7;
+  --gray: #464646;
+  --blue-light: #667eea;
+  --purple: #764ba2;
+}
+
+.body-container {
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(135deg, var(--blue-light), var(--purple));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-container {
+  width: 30rem;
+  height: 40rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border-radius: 1rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.6);
+}
+
+.error-container {
+  width: 20rem;
+  height: 35em;
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.6);
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.error-container:hover {
+  transform: scale(1.02);
+}
+
+.icon-container {
+  width: 10rem;
+  height: 10rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-message {
+  font-size: 1.5rem;
+  color: var(--purple);
+  width: 16rem;
+  text-align: center;
+}
+
+span {
+  color: var(--blue-light);
+  font-size: 6rem;
+}
+
+.button {
+  width: 13rem;
+  height: 4rem;
+  font-size: 1.5rem;
+  color: white;
+  background-color: var(--blue-light);
+  border-radius: 1rem;
+  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.6);
+}
+
+.button:hover {
+  background-color: var(--purple);
+}
+
+@media (min-width: 350px) {
+  .body-container {
+    min-height: 50rem;
+  }
+}
+</file>
+
+<file path="src/public/styles/dashboard.css">
+:root {
+  --blue-light: #667eea;
+  --purple: #764ba2;
+  --dark-gray: #d7d7d7;
+  --gray: #464646;
+  --white: #ffffff;
+  --red: #ff4b5c;
+
+  --shadow-soft: 0px 8px 20px rgba(0, 0, 0, 0.1);
+  --glass: rgba(255, 255, 255, 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 62.5%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: linear-gradient(135deg, var(--blue-light), var(--purple));
+  min-height: 100vh;
+  padding: 2rem;
+  color: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  width: 100%;
+  max-width: 90rem;
+  padding: 4rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  border-radius: 2rem;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-soft);
+  animation: fadeIn 0.6s ease-in-out;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.card {
+  background: var(--white);
+  padding: 3rem;
+  border-radius: 1.6rem;
+  box-shadow: var(--shadow-soft);
+  width: 100%;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.project-info {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.project-name {
+  font-size: 3.2rem;
+  font-weight: bold;
+  color: black;
+  margin-bottom: 1rem;
+}
+
+.welcome-title {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+  color: var(--purple);
+}
+
+.username {
+  color: var(--blue-light);
+  font-weight: bold;
+}
+
+.logo-box {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 15rem;
+  height: 15rem;
+  border-radius: 1rem;
+  box-shadow: var(--shadow-soft);
+  background-color: var(--white);
+}
+
+.logo {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  border-radius: 1rem;
+}
+
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+}
+
+.dashboard-title {
+  font-size: 2.4rem;
+  text-align: center;
+  color: var(--purple);
+  font-weight: 600;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: 2rem;
+  width: 100%;
+}
+
+.dashboard-card {
+  background-color: var(--white);
+  padding: 2rem;
+  border-radius: 1.2rem;
+  box-shadow: var(--shadow-soft);
+  text-align: center;
+  transition: all 0.4s ease;
+  cursor: pointer;
+  color: var(--gray);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.dashboard-card:hover {
+  background-color: var(--purple);
+  color: var(--white);
+  transform: translateY(-6px) scale(1.03);
+}
+
+.dashboard-card-title {
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+.dashboard-footer {
+  font-size: 1.3rem;
+  color: var(--gray);
+  text-align: center;
+  margin-top: 2rem;
+  opacity: 0.7;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .container {
+    padding: 2rem 1rem;
+  }
+
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .logo-box {
+    width: 12rem;
+    height: 12rem;
+  }
+}
+</file>
+
+<file path="src/public/styles/profile.css">
+:root {
+  --blue-light: #667eea;
+  --purple: #764ba2;
+  --dark-gray: #d7d7d7;
+  --gray: #464646;
+  --white: #ffffff;
+  --red: #ff4b5c;
+  --yellow: #ffb400;
+
+  --shadow-soft: 0px 8px 20px rgba(0, 0, 0, 0.1);
+  --glass: rgba(255, 255, 255, 0.1);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 62.5%;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: linear-gradient(135deg, var(--blue-light), var(--purple));
+  min-height: 100vh;
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: black;
+}
+
+.profile-container {
+  width: 100%;
+  max-width: 90rem;
+  padding: 4rem 2rem;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  border-radius: 2rem;
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+.top-nav {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.back-button {
+  background-color: var(--white);
+  color: var(--blue-light);
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  border-radius: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  box-shadow: var(--shadow-soft);
+  transition: background-color 0.3s ease;
+}
+
+.back-button:hover {
+  background-color: var(--blue-light);
+  color: var(--white);
+}
+
+.card {
+  background: var(--white);
+  padding: 3rem;
+  border-radius: 1.6rem;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.profile-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-title {
+  font-size: 3.2rem;
+  font-weight: bold;
+  color: black;
+}
+
+.profile-role {
+  font-size: 1.8rem;
+  color: var(--gray);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-subtitle {
+  font-size: 1.8rem;
+  color: var(--purple);
+}
+
+.avatar-box {
+  width: 15rem;
+  height: 15rem;
+  background-color: var(--white);
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: var(--shadow-soft);
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.section-title {
+  font-size: 2.4rem;
+  text-align: center;
+  color: var(--purple);
+  font-weight: 600;
+  margin-bottom: 2rem;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 2rem;
+}
+
+.detail-item {
+  background: var(--white);
+  padding: 2rem;
+  border-radius: 1.2rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.detail-label {
+  font-size: 1.4rem;
+  color: var(--gray);
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.detail-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: black;
+}
+
+.profile-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  align-items: center;
+}
+
+.actions-grid {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.action-button {
+  background-color: var(--blue-light);
+  color: var(--white);
+  border: none;
+  padding: 1.2rem 2.4rem;
+  border-radius: 1rem;
+  font-size: 1.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  transition: background-color 0.3s ease;
+}
+
+.action-button:hover {
+  transform: translateY(-2px);
+}
+
+.primary {
+  background-color: var(--blue-light);
+}
+
+.warning {
+  background-color: var(--yellow);
+  color: black;
+}
+
+.danger {
+  background-color: var(--red);
+}
+
+.profile-footer {
+  font-size: 1.3rem;
+  color: var(--gray);
+  text-align: center;
+  opacity: 0.7;
+  margin-top: 2rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media screen and (max-width: 600px) {
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .avatar-box {
+    width: 12rem;
+    height: 12rem;
+  }
+}
+</file>
+
+<file path="src/public/styles/registerForm.css">
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --dark-gray: #d7d7d7;
+  --gray: #464646;
+  --blue-light: #667eea;
+  --purple: #764ba2;
+  --white: #ffffff;
+  --shadow: 0px 5px 5px rgba(0, 0, 0, 0.6);
+}
+
+html {
+  font-size: 62.5%;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, var(--blue-light), var(--purple));
+}
+
+body {
+  width: 100vw;
+  min-height: 130rem;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-container {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  border-radius: 1.6rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.6s ease-in-out;
+}
+
+.auth-card {
+  background: var(--white);
+  border-radius: 1.2rem;
+  box-shadow: var(--shadow);
+  min-width: 32rem;
+  min-height: 42rem;
+  gap: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  transition: transform 0.3s ease;
+}
+
+.auth-card:hover {
+  transform: scale(1.02);
+}
+
+.auth-info h1 {
+  font-size: 3rem;
+}
+
+.auth-info h2 {
+  color: var(--purple);
+  font-size: 1.8rem;
+}
+
+.auth-logo {
+  width: 10rem;
+}
+
+.auth-form h2 {
+  font-size: 2.6rem;
+  color: var(--purple);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  align-items: center;
+}
+
+.form input,
+.form select {
+  width: 22rem;
+  height: 3.2rem;
+  border-radius: 0.8rem;
+  border: 0.1rem solid #ccc;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.form button {
+  width: 12rem;
+  height: 3.2rem;
+  border-radius: 0.8rem;
+  margin-top: 2rem;
+  border: none;
+  background-color: var(--blue-light);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.form button:hover {
+  background-color: var(--purple);
+}
+
+.form-error {
+  display: none;
+  color: red;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.auth-links {
+  font-size: 1.3rem;
+}
+
+.auth-links p {
+  margin-top: -1rem;
+  cursor: pointer;
+  color: var(--blue-light);
+}
+
+.auth-links p:hover {
+  color: var(--purple);
+  text-decoration: underline;
+}
+
+.auth-form.scroll {
+  overflow-y: auto;
+  padding: 1rem 0;
+}
+
+@media (max-width: 900px) {
+  .auth-container {
+    flex-direction: column;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</file>
+
+<file path="src/routes/index.js">
+// Import the Router class from Express
+import { Router } from 'express';
+// Import the UIRouter for handling user-interface-related routes
+import { UIRouter } from './UIRouter.js';
+// Import the userRouter for handling user-related routes
+import { userRouter } from './userRouter.js';
+
+// Function to set up API routes
+const routerApi = (app) => {
+
+  // Create a new Router instance
+  const router = Router();
+
+  // Use the router instance for the '/app/v1' path
+  app.use('/app/v1', router);
+
+  // Use the UIRouter for handling the root '/' route under '/app/v1/'
+  router.use('/', UIRouter);
+
+  // Use the userRouter for handling '/users' routes under '/app/v1'
+  router.use('/users', userRouter);
+}
+
+// Export the routerApi function for use in other parts of the application
+export default routerApi;
+</file>
+
+<file path="src/utils/auth/authApp/strategies/jwt.strategy.js">
+// Import the necessary modules from passport-jwt
+import { Strategy, ExtractJwt } from "passport-jwt";
+// Import the configuration settings
+import { config } from "../../../../config/config.js";
+
+// Define options for the JWT strategy
+const options = {
+  // Extract JWT from the Authorization header as a Bearer token
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  // Secret key for verifying the JWT
+  secretOrKey: config.authAppJwtKey
+};
+
+export const authAppJwtStrategy = new Strategy(options, (payload, done) => {
+  // Pass the payload to the done function if verification is successful
+  return done(null, payload);
+});
+</file>
+
+<file path="src/utils/auth/authApp/tokenData.js">
+// Import the verifyToken function from the tokenVerify.js module
+import { verifyToken } from '../tokenVerify.js';
+// Import the config object which contains the application configuration settings
+import { config } from '../../config/config.js';
+
+export const getUserData = (token) => {
+  if (!token) {
+    // Return null if no token is provided
+    return null;
+  }
+
+  try {
+    // Verify the token using the secret key from the config and decode it
+    const decoded = verifyToken(token, config.authAppJwtKey);
+    // Return the student fingerprint hash from the decoded token
+    return decoded.userData;
+  } catch (err) {
+    // Return null if token verification fails
+    return null;
+  }
+};
+</file>
+
+<file path="src/utils/auth/index.js">
+// Import Passport for authentication
+import passport from 'passport';
+// Import the auth-app JWT authentication strategy for JWT authentication
+import { authAppJwtStrategy } from './authApp/strategies/jwt.strategy.js';
+
+// Use the auth-app JwtStrategy for JWT authentication
+passport.use(authAppJwtStrategy);
+</file>
+
+<file path="src/utils/auth/passwordHash.js">
+// Import the bcryptjs library for handling password hashing
+import bcrypt from 'bcryptjs';
+
+export const hashPassword = async (userPassword) => {
+  return new Promise((resolve, reject) => {
+    try {
+      // Define the number of salt rounds to use
+      const saltRounds = 11;
+      // Generate a salt with the defined number of rounds
+      bcrypt.genSalt(saltRounds)
+        // Hash the password with the generated salt
+        .then((salt) => bcrypt.hash(userPassword, salt))
+        // Resolve the promise with the hashed password
+        .then((hashedPass) => resolve(hashedPass))
+        // Catch and reject any error during hashing
+        .catch((err) => reject(`Error in the encryption: ${err.message}`));
+    } catch (err) {
+      // Catch and reject any error during salt generation
+      reject(`Error when generating the salt: ${err.message}`);
+    }
+  });
+};
+</file>
+
+<file path="src/utils/auth/tokenSign.js">
+// Import the jsonwebtoken library for handling JWT operations
+import jwt from 'jsonwebtoken';
+
+export const signUserToken = (payload, secret, timer) => {
+  return jwt.sign(payload, secret, { expiresIn: timer });
+};
+</file>
+
+<file path="src/utils/auth/tokenVerify.js">
+// Import the jsonwebtoken library for handling JWT operations
+import jwt from 'jsonwebtoken';
+
+export const verifyToken = (token, secret) => {
+  return jwt.verify(token, secret);
+};
+</file>
+
+<file path="src/views/authError.ejs">
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Autenticación invalida">
+  <link rel="stylesheet" href="/styles/authError.css" type="text/css">
+  <meta name="robots" content="index,follow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <title>Autenticación invalida</title>
+  <script type="application/javascript" src="/js/redirectView.js"></script>
+</head>
+
+<body class="body-container">
+  <main class="app-container">
+    <section class="error-container">
+      <div class="icon-container">
+        <span class="<%= type === 'user' ? 'fa-solid fa-user-xmark fa-beat' :
+                        type === 'password' ? 'fa-solid fa-lock fa-beat' :
+                        type === 'no-token' ? 'fa-solid fa-user-shield fa-beat' :
+                        type === 'token-exp' ? 'fa-solid fa-right-from-bracket fa-beat' :
+                        type === 'token-inv' ? 'fa-solid fa-circle-exclamation fa-beat' : '' %>"></span>
+      </div>
+      <p class="error-message">
+        <%= message %>
+      </p>
+      <button class="button" data-path="/app/v1/" onclick="redirect(this)">Aceptar</button>
+    </section>
+  </main>
+</body>
+
+</html>
+</file>
+
+<file path="src/views/registerForm.ejs">
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registro de usuario</title>
+  <link rel="stylesheet" href="/styles/registerForm.css">
+  <script defer type="application/javascript" src="/js/registerForm.js"></script>
+  <script type="application/javascript" src="/js/redirectView.js"></script>
+</head>
+
+<body>
+  <main class="auth-container">
+
+    <section class="auth-card auth-info">
+      <h1>Sistema académico</h1>
+      <h2>Crear cuenta</h2>
+      <img class="auth-logo" src="https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png" alt="Logo">
+    </section>
+
+    <section class="auth-card auth-form scroll">
+      <h2>Registro</h2>
+
+      <form class="form" onsubmit="return handleRegister(event)">
+        <input type="number" placeholder="Documento" id="id" required>
+        <input type="text" placeholder="Usuario" id="userName" required>
+        <input type="password" placeholder="Contraseña" id="password" required>
+
+        <select id="role" required>
+          <option value="">Rol</option>
+          <option value="estudiante">Estudiante</option>
+          <option value="coordinador">Coordinador</option>
+          <option value="docente">Docente</option>
+        </select>
+
+        <input type="email" placeholder="Correo" id="email" required>
+        <input type="tel" placeholder="Teléfono" id="phone" required>
+        <input type="text" placeholder="Dirección" id="address" required>
+        <input type="text" placeholder="Matrícula" id="registrationNumber" required>
+
+        <select id="program" required>
+          <option value="">Programa</option>
+          <option>Ingeniería de Sistemas</option>
+          <option>Ingeniería Electrónica</option>
+          <option>Ingeniería Industrial</option>
+          <option>Ingeniería Civil</option>
+          <option>Ingeniería Mecánica</option>
+        </select>
+
+        <input type="text" placeholder="Primer nombre" id="firstName" required>
+        <input type="text" placeholder="Segundo nombre" id="middleName">
+        <input type="text" placeholder="Primer apellido" id="firstLastName" required>
+        <input type="text" placeholder="Segundo apellido" id="secondLastName" required>
+
+        <p class="form-error" id="wrong-input"></p>
+
+        <button type="submit">Registrar</button>
+      </form>
+
+      <div class="auth-links">
+        <p data-path="/app/v1/" onclick="redirect(this)">Volver al login</p>
+      </div>
+    </section>
+
+  </main>
+</body>
+
+</html>
+</file>
+
+<file path="src/app.js">
+// Import necessary modules and dependencies
+// Express framework for creating the app
+import express from 'express';
+// function to manage files and directories since the node.js app
+import path from 'path';
+// function to have access to the directory or file path
+import { fileURLToPath } from 'url';
+// Middleware to handle body request
+import bodyParser from 'body-parser';
+// Middleware to handle cookies
+import cookieParser from 'cookie-parser';
+// Middleware for logging HTTP requests
+import morgan from 'morgan';
+// Function to test database connection
+import { testConnection } from './libraries/DBConnection.js';
+// Import the IP address and port from the network configuration file
+import { theIPAddress, port } from './libraries/netConfig.js';
+// Main router for the API
+import routerApi from './routes/index.js';
+// Custom error handling middlewares
+import {
+    logError,
+    errorHandler,
+    boomErrorHandler,
+} from "./middlewares/errorHandler.js";
+
+// Create the app with Express
+const app = express();
+
+// Use middlewares
+// HTTP request logger middleware
+app.use(morgan('dev'));
+// Middleware to parse URL-encoded data
+app.use(express.urlencoded({ extended: false }));
+// Middleware to parse JSON data
+app.use(express.json());
+// Middleware for parsing JSON bodies
+app.use(bodyParser.json());
+// Middleware for handle cookies
+app.use(cookieParser());
+
+// Static files path
+// Store in the constant the project dirname
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// Define the path to static files a throw the src/public/ path
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Views engine
+// Define the access path to the HTML view templates
+app.set('views', path.join(__dirname, 'views'));
+// Define the HTML templates engine, and the templates file extension
+app.set('view engine', 'ejs');
+
+// Immediately Invoked Function Expression (IIFE) to run the server
+(async () => {
+  // Await the app to start listening on the specified IP address and port
+  const createApp = await app.listen(port, theIPAddress, (req, res) => {
+    // Log the server start information to the console
+    console.log(`server on port http://${theIPAddress}:${port}`);
+  });
+})();
+
+// Test database connection
+// Call the function to ensure the database connection is working
+testConnection();
+
+// Initialize the main router
+// Set up API routes
+routerApi(app);
+
+// Import passport authentication setup
+// Dynamic import of authentication module
+const passport = import('./utils/auth/index.js');
+
+// Use custom error handling middlewares
+// Middleware for logging errors
+app.use(logError);
+// Middleware for handling Boom errors
+app.use(boomErrorHandler);
+// General error handling middleware
+app.use(errorHandler);
+
+// Export the app for use in other files
+export default app;
+</file>
+
+<file path=".editorconfig">
+# Editor configuration, see https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.js]
+[*.cjs]
+[*.mjs]
+quote_type = single
+
+[*.md]
+max_line_length = off
+trim_trailing_whitespace = false
+</file>
+
+<file path=".eslintrc.json">
+{
+  "env": {
+    "browser": true,
+    "node": true,
+    "es2021": true,
+    "jest": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "prettier",
+    "plugin:node/recommended,"
+  ],
+  "parserOptions": {
+    "ecmaVersion": 12,
+    "sourceType": "module"
+  },
+  "rules": {
+    "indent": [
+      "error",
+      2
+    ],
+    "no-console": "warn",
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "quotes": [
+      "error",
+      "single"
+    ],
+    "semi": [
+      "error",
+      "always"
+    ],
+    "node/no-unsupported-features/es-syntax": [
+      "error",
+      {
+        "version": ">=12.0.0",
+        "ignores": []
+      }
+    ]
+  }
+}
+</file>
+
+<file path="LICENSE">
+MIT License
+
+Copyright (c) 2025 Cristian Camilo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</file>
+
+<file path="nodemon.json">
+{
+    "ignore": [
+        ".git",
+        ".node_modules/**/node_modules"
+    ],
+    "watch": [
+        "src/**/*.js",
+        "src/**/*.cjs",
+        "src/**/*.mjs"
+    ],
+    "ext": "js,cjs,mjs,json,"
+}
+</file>
+
+<file path="src/config/config.js">
+// Import dotenv package to load environment variables from a .env file
+import dotenv from "dotenv";
+
+// Load environment variables from .env file into process.env
+dotenv.config();
+
+// Export the configuration object containing various application settings
+export const config = {
+
+  // Application port (default to 3030 if not specified)
+  appPort: process.env.APP_PORT || 3030,
+
+  // Database user name from environment variables
+  dbUser: process.env.DB_USER,
+
+  // Database user password from environment variables
+  dbUserPassword: process.env.DB_USER_PASSWORD,
+
+  // Database host from environment variables
+  dbHost: process.env.DB_HOST,
+
+  // Database name from environment variables
+  dbName: process.env.DB_NAME,
+
+  // Database port from environment variables
+  dbPort: process.env.DB_PORT,
+
+  // JWT secret key for the authentication application
+  authAppJwtKey: process.env.AUTH_APP_JWT_SECRET_KEY,
+
+};
+</file>
+
+<file path="src/controllers/UI/dashboard.js">
+// Import the UserServices class from the userServices module
+import { UserServices } from '../../services/userServices.js';
+// Import Boom for handling HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const dashboard = async (req, res, next) => {
+  // Instantiate the UserServices class to manage user operations
+  const userManager = new UserServices();
+  try {
+    // Extract the user id that the middleware saved in req.user
+    const { id } = req.user;
+    // Find the user record by ID
+    const userData = await userManager.listOne(id);
+    // Return rendering the template and send the username
+    res.render('dashboard', { userName: userData.userName });
+  } catch (err) {
+    const boomError = Boom.notImplemented(
+      'No es posible renderizar la vista de dashboard principal.',
+      err);
+    next(boomError);
+  }
+};
+</file>
+
+<file path="src/controllers/UI/profile.js">
+// Import the UserServices class from the userServices module
+import { UserServices } from '../../services/userServices.js';
+// Import Boom for handling HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const profile = async (req, res, next) => {
+  // Instantiate the UserServices class to manage user operations
+  const userManager = new UserServices();
+  try {
+    // Extract the user id that the middleware saved in req.user
+    const { id } = req.user;
+    // Find the user record by ID
+    const userData = await userManager.listOne(id);
+    // Return rendering the template and send the user data object
+    res.render('profile', { userData: userData });
+  } catch (err) {
+    const boomError = Boom.notImplemented(
+      'No es posible renderizar la vista de perfil de usuario.',
+      err);
+    next(boomError);
+  }
+};
+</file>
+
+<file path="src/controllers/users/delete.js">
+// Import the UserServices class from the userServices module
+import { UserServices } from '../../services/userServices.js';
+// Import Boom for handling HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const deleteOneUser = async (req, res, next) => {
+
+  // Extract the user ID from the request body
+  const { id } = req.body;
+
+  // Validate if the user ID is sent.
+  if (!id) {
+    return next(Boom.badRequest('User ID is required for deletion'));
+  }
+
+  // Instantiate the UserServices class to manage the user operations
+  const userManager = new UserServices();
+
+  try {
+    // Attempt to delete the user by the provided ID
+    const response = await userManager.deleteOne(id);
+
+    // If the user is deleted successfully, send a success response
+    if (response.status === 'DELETED SUCCESSFULLY') {
+      return res.status(200).json({
+        success: true,
+        message: 'User deleted successfully',
+        // Include the new token in the response
+        authentication: res.locals.newUserToken
+      });
+    }
+
+  } catch (err) {
+    if (Boom.isBoom(err)) {
+      return next(err);
+    }
+    // Handle errors during user deletion by sending a Boom error response
+    const boomError = Boom.serverUnavailable(
+      'Unable to delete the user from the database',
+      err
+    );
+    // Pass the Boom error to the next middleware in the stack
+    next(boomError);
+  }
+};
+</file>
+
+<file path="src/controllers/users/listAll.js">
+// Import the UserServices class from the userServices module
+import { UserServices } from '../../services/userServices.js';
+// Import Boom for handling HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const listAllUsers = async (req, res, next) => {
+
+  // Instantiate the UserServices class to manage the users operations
+  const userManager = new UserServices();
+
+  try {
+    // Attempt to retrieve all user records from the database
+    const allRecords = await userManager.listAll();
+
+    // If records are found, send a success response with the user data
+    if (allRecords && allRecords.length > 0) {
+      return res.status(200).json({
+        success: true,
+        message: 'Users retrieved successfully',
+        // Include the new token in the response
+        authentication: res.locals.newUserToken,
+        users: allRecords
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: 'No users found',
+        // Include the new token in the response
+        authentication: res.locals.newUserToken,
+        users: []
+      });
+    }
+
+  } catch (err) {
+    if (Boom.isBoom(err)) {
+      return next(err);
+    }
+    // Handle errors during user retrieval by sending a Boom error response
+    const boomError = Boom.serverUnavailable(
+      'Unable to retrieve users from the database',
+      err
+    );
+    // Pass the Boom error to the next middleware in the stack
+    next(boomError);
+  }
+};
+</file>
+
+<file path="src/controllers/users/listOne.js">
+// Import the UserServices class from the userServices module
+import { UserServices } from '../../services/userServices.js';
+// Import Boom for handling HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const listOneUser = async (req, res, next) => {
+
+  // Destructure the user ID from the request body
+  const { id } = req.body;
+
+  // Validate if the user ID is sent.
+  if (!id) {
+    return next(Boom.badRequest('User ID is required for the search'));
+  }
+
+  // Instantiate the UserServices class to manage user operations
+  const userManager = new UserServices();
+
+  try {
+    // Attempt to find the user record by ID
+    const record = await userManager.listOne(id);
+
+    // If the user record is found, send a success response with the user data
+    if (record) {
+      return res.status(200).json({
+        success: true,
+        message: 'User found successfully',
+        // Include the new token in the response
+        authentication: res.locals.newUserToken,
+        user: record
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+  } catch (err) {
+    if (Boom.isBoom(err)) {
+      return next(err);
+    }
+    // Handle errors during the user retrieval process by sending a Boom error response
+    const boomError = Boom.serverUnavailable(
+      'Unable to retrieve the user from the database',
+      err
+    );
+    // Pass the Boom error to the next middleware in the stack
+    next(boomError);
+  }
+};
+</file>
+
+<file path="src/controllers/users/password.js">
+// Import the UserServices class from the userServices module
+import { UserServices } from '../../services/userServices.js';
+// Import Boom to create HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const updatePassword = async (req, res, next) => {
+
+  // Extract user credentials from the request body
+  const { id, userName, email, newPassword } = req.body.credentials;
+
+  // Instantiate the UserServices class to manage user operations
+  const userManager = new UserServices();
+
+  try {
+    // Attempt to update the user password in the database
+    const response = await userManager.updatePassword(id, userName, email, newPassword);
+
+    // If the update is successful, return a 201 response with a success message
+    if (response.status === 'PASSWORD UPDATED SUCCESSFULLY') {
+      return res.status(201).json({
+        success: true,
+        message: 'Password updated successfully',
+        // Include the new token in the response
+        authentication: res.locals.newUserToken
+      });
+    }
+
+  } catch (err) {
+    if(Boom.isBoom(err)) {
+      return next(err)
+    }
+    // Handle errors during the update process by returning a 503 error
+    const boomError = Boom.badImplementation(
+      'Unable to update password in database',
+      err
+    );
+    next(boomError);
+  }
+};
+</file>
+
+<file path="src/controllers/users/update.js">
+// Import the UserServices class from the userServices module
+import { UserServices } from '../../services/userServices.js';
+// Import Boom to create HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const updateOneUser = async (req, res, next) => {
+
+  // Extract user ID and new user data from the request body
+  const { id, newUserData } = req.body;
+
+  // Validate if the user ID and new data object is sent.
+  if (!id || !newUserData) {
+    return next(Boom.badRequest('User ID and new user data are required'));
+  }
+
+  // Instantiate the UserServices class to manage user operations
+  const userManager = new UserServices();
+
+  try {
+    // Attempt to update the user details in the database
+    const response = await userManager.updateOne(id, newUserData);
+
+    // If the update is successful, return a 201 response with a success message
+    if (response.status === 'UPDATED SUCCESSFULLY') {
+      return res.status(200).json({
+        success: true,
+        message: 'User updated successfully',
+        // Include the new token in the response
+        authentication: res.locals.newUserToken
+      });
+    } else {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found or update failed'
+      });
+    }
+
+  } catch (err) {
+    if (Boom.isBoom(err)) {
+      return next(err)
+    }
+    // Handle errors during the update process by returning a 503 error
+    const boomError = Boom.serverUnavailable(
+      'Unable to update user in database',
+      err
+    );
+    next(boomError);
+  }
+};
+</file>
+
+<file path="src/middlewares/errorHandler.js">
+// Import Boom for HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+
+export const logError = (err, req, res, next) => {
+  // Pass the error to the next middleware
+  next(err);
+}
+
+
+export const errorHandler = (err, req, res, next) => {
+  // Send a 500 Internal Server Error response with error details
+  res.status(500).json({
+    message: err.message,
+    stack: err.stack
+  });
+}
+
+
+export const boomErrorHandler = (err, req, res, next) => {
+  // Check if the error is a Boom error
+  if (Boom.isBoom(err)) {
+    // Send the Boom error response
+    res.status(err.output.statusCode).json(err.output.payload);
+  } else {
+    // Pass the error to the next middleware
+    next(err);
+  }
+}
+</file>
+
+<file path="src/public/js/login.js">
+async function handleSubmit(event) {
+  event.preventDefault();
+
+  const userName = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
+  const wrongInput = document.getElementById('wrong-input');
+
+  const credentials = { userName, password };
+
+  try {
+    const response = await fetch('/app/v1/users/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ credentials })
+    });
+
+    if (response.status === 200) {
+      window.location.href = '/app/v1/dashboard';
+    } else if (response.status === 404 || response.status === 401) {
+      const html = await response.text();
+      document.body.innerHTML = html;
+
+      const acceptButton = document.querySelector('.button');
+      acceptButton.addEventListener('click', function () {
+        window.location.href = '/app/v1/';
+      });
+    }
+  } catch (error) {
+    wrongInput.textContent = 'Error de conexión con el servidor';
+    wrongInput.style.display = 'block';
+  }
+}
+</file>
+
+<file path="src/public/js/validateFormLoginFields.js">
+document.addEventListener('DOMContentLoaded', () => {
+  const usernameField = document.getElementById('username');
+  const passwordField = document.getElementById('password');
+  const wrongInput = document.getElementById('wrong-input');
+  const form = document.querySelector('.form-box');
+
+  usernameField.addEventListener('input', validateUsernameField);
+  usernameField.addEventListener('blur', validateUsernameField);
+
+  passwordField.addEventListener('input', validatePasswordField);
+  passwordField.addEventListener('blur', validatePasswordField);
+
+  const redShadow = '0px 5px 5px rgba(194, 18, 18, 0.6)';
+  const blackShadow = '0px 5px 5px rgba(0, 0, 0, 0.6)';
+
+  function validateUsernameField() {
+    const usernameRegEx = /^[a-zA-Z0-9._-]{3,20}$/;
+    const isValid = usernameRegEx.test(usernameField.value);
+
+    if (!isValid) {
+      usernameField.style.boxShadow = redShadow;
+      showError("El usuario debe tener entre 3 y 20 caracteres.");
+      return false;
+    } else {
+      clearError(usernameField);
+      return true;
+    }
+  }
+
+  function validatePasswordField() {
+    const passwordRegEx = /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]{5,30}$/;
+    const isValid = passwordRegEx.test(passwordField.value);
+
+    if (!isValid) {
+      passwordField.style.boxShadow = redShadow;
+      showError("La contraseña debe tener entre 5 y 30 caracteres e incluir al menos un número.");
+      return false;
+    } else {
+      clearError(passwordField);
+      return true;
+    }
+  }
+
+  function showError(message) {
+    wrongInput.style.display = 'flex';
+    wrongInput.textContent = message;
+  }
+
+  function clearError(field) {
+    wrongInput.style.display = 'none';
+    wrongInput.textContent = '';
+    field.style.boxShadow = blackShadow;
+  }
+
+  form.addEventListener('submit', (event) => {
+    const isUsernameValid = validateUsernameField();
+    const isPasswordValid = validatePasswordField();
+
+    if (!isUsernameValid || !isPasswordValid) {
+      event.preventDefault();
+      showError("Por favor, corrija los errores antes de continuar.");
+    }
+  });
+});
+</file>
+
+<file path="src/public/styles/loginForm.css">
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --dark-gray: #d7d7d7;
+  --gray: #464646;
+  --blue-light: #667eea;
+  --purple: #764ba2;
+}
+
+html,
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+html {
+  font-size: 62.5%;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, var(--blue-light), var(--purple));
+}
+
+body {
+  width: 100vw;
+  height: 100vh;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 1.6rem;
+  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.6);
+  transition: all 0.4s ease-in-out;
+  max-width: 95%;
+}
+
+.card {
+  background: white;
+  border-radius: 1.2rem;
+  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.6);
+  min-width: 30rem;
+  min-height: 40rem;
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: scale(1.02);
+}
+
+.project-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.project-name {
+  color: black;
+  font-size: 6rem;
+}
+
+.welcome-title {
+  color: var(--purple);
+  font-size: 2rem;
+  margin-top: -5rem;
+}
+
+.logo-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 15rem;
+  height: 15rem;
+  border-radius: 1rem;
+  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.6);
+}
+
+.logo {
+  width: 100px;
+}
+
+.login-form,
+.form-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.login-title {
+  font-size: 3rem;
+  color: var(--purple);
+}
+
+.form-lb {
+  font-weight: bold;
+  font-size: 1.6rem;
+  color: black;
+}
+
+.form-input {
+  width: 15rem;
+  height: 3rem;
+  border: 0.1rem solid #cccccc;
+  border-radius: 0.8rem;
+  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.6);
+  text-align: center;
+}
+
+.wrong-input {
+  display:none;
+  text-align: center;
+  width: 18rem;
+  font-size: 1.2rem;
+  color: red;
+  margin-top: 1rem;
+}
+
+.form-button {
+  background-color: var(--blue-light);
+  color: white;
+  margin-top: 1.5rem;
+  border: none;
+  border-radius: 0.8rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  width: 10rem;
+  height: 3rem;
+  box-shadow: 0px 5px 5px rgba(0, 0, 0, 0.6);
+  font-size: 1.4rem;
+  text-align: center;
+}
+
+.form-button:hover {
+  background-color: var(--purple);
+}
+
+.linksBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+}
+
+.support, .forgot, .register {
+  margin-top: 0.8rem;
+  color: var(--blue-light);
+  cursor: pointer;
+  transition: color 0.3s ease, text-decoration 0.3s ease;
+}
+
+.support:hover,
+.forgot:hover,
+.register:hover {
+  text-decoration: underline;
+  color: var(--purple);
+}
+
+@media (min-width: 350px) {
+
+  body {
+    min-width: 35rem;
+    min-height: 100rem;
+  }
+
+  .container {
+    width: 90%;
+    max-width: 36rem;
+    height: 90rem;
+  }
+
+  .project-info {
+    height: 30rem;
+  }
+
+  .project-name {
+    font-size: 2rem;
+  }
+
+  .welcome-title {
+    font-size: 1.6rem;
+  }
+
+  .login-form {
+    height: 40rem;
+  }
+}
+
+@media (min-width: 600px) {
+
+  body {
+    min-width: 60rem;
+  }
+
+  .container {
+    max-width: 54rem;
+  }
+
+  .form-input {
+    width: 20rem;
+  }
+
+}
+
+@media (min-width: 900px) {
+
+  body {
+    min-width: 90rem;
+    min-height: 70rem;
+  }
+
+  .container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    max-width: 80rem;
+    height: 55rem;
+  }
+
+  .card {
+    min-width: 35rem;
+    height: 90%;
+  }
+
+  .form-input {
+    width: 25rem;
+  }
+
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.container {
+  animation: fadeIn 0.6s ease-in-out;
+}
+</file>
+
+<file path="src/routes/userRouter.js">
+// Import the Router class from Express
+import { Router } from "express";
+// Import the middleware to verify tokens from the authentication app
+import { authAppVerifyToken } from
+'../middlewares/tokenHandlers/authAppTokenHandler.js';
+// Import the controllers functions to authenticate and manage users
+import { loginUser } from '../controllers/users/login.js';
+import { createOneUser } from '../controllers/users/create.js';
+import { deleteOneUser } from '../controllers/users/delete.js';
+import { updateOneUser } from '../controllers/users/update.js';
+import { updatePassword } from '../controllers/users/password.js';
+import { listOneUser } from '../controllers/users/listOne.js';
+import { listAllUsers } from '../controllers/users/listAll.js';
+
+// Create a new Router instance
+export const userRouter = Router();
+
+// Define a POST route for users authentication
+userRouter.post(
+  // Route path to authenticate a users
+  '/login',
+  // Controller function to login a user
+  loginUser
+);
+
+// Define a POST route for create an user
+userRouter.post(
+  // Route path to create a user
+  '/create',
+  // Middleware to verify the token before proceeding to the controller
+  //authAppVerifyToken,
+  // Controller function to create the user
+  createOneUser
+);
+
+// Define a POST route to update an user
+userRouter.post(
+  // Route path to update a user
+  '/update',
+  // Middleware to verify the token before proceeding to the controller
+  authAppVerifyToken,
+  // Controller function to update the user data
+  updateOneUser
+);
+
+// Define a POST route to update an user password
+userRouter.post(
+  // Route path to update a user
+  '/password',
+  // Middleware to verify the token before proceeding to the controller
+  authAppVerifyToken,
+  // Controller function to update the user password
+  updatePassword
+);
+
+// Define a POST route to delete an user
+userRouter.post(
+  // Route path to delete a user
+  '/delete',
+  // Middleware to verify the token before proceeding to the controller
+  authAppVerifyToken,
+  // Controller function to delete the user
+  deleteOneUser
+);
+
+// Define a POST route to list an user
+userRouter.post(
+  // Route path to list an user
+  '/listone',
+  // Middleware to verify the token before proceeding to the controller
+  authAppVerifyToken,
+  // Controller function to list a user
+  listOneUser
+);
+
+// Define a GET route to list all users
+userRouter.get(
+  // Route path to list all users
+  '/listall',
+  // Middleware to verify the token before proceeding to the controller
+  authAppVerifyToken,
+  // Controller function to list all users
+  listAllUsers
+);
+</file>
+
+<file path="src/views/dashboard.ejs">
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Panel de usuario - Dashboard">
+  <title>Dashboard</title>
+  <meta name="robots" content="index,follow">
+  <link rel="stylesheet" href="/styles/dashboard.css" type="text/css" />
+  <script type="application/javascript" src="/js/redirectView.js"></script>
+</head>
+
+<body>
+  <main class="container">
+    <section class="card project-info">
+      <h1 class="project-name">Sistema académico</h1>
+      <h2 class="welcome-title">Hola,
+        <span class="username">
+          <%= userName %>
+        </span>
+      </h2>
+      <picture class="logo-box">
+        <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png"
+          alt="JavaScript Logo" />
+      </picture>
+    </section>
+    <section class="card dashboard">
+      <h2 class="dashboard-title">Servicios disponibles</h2>
+
+      <div class="dashboard-grid">
+        <div class="dashboard-card">
+          <h3 class="dashboard-card-title">Mis cursos</h3>
+          <p>Consulta y gestiona tus asignaturas actuales.</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3 class="dashboard-card-title">Calificaciones</h3>
+          <p>Visualiza tus resultados académicos por período.</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3 class="dashboard-card-title">Horarios</h3>
+          <p>Revisa tu calendario semanal de clases.</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3 class="dashboard-card-title">Biblioteca</h3>
+          <p>Accede a libros digitales y recursos de estudio.</p>
+        </div>
+
+        <div class="dashboard-card">
+          <h3 class="dashboard-card-title">Mensajes</h3>
+          <p>Comunícate con profesores y administrativos.</p>
+        </div>
+
+        <div class="dashboard-card" data-path="/app/v1/profile" onclick="redirect(this)">
+          <h3 class="dashboard-card-title">Perfil</h3>
+          <p>Actualiza tus datos personales y de contacto.</p>
+        </div>
+      </div>
+
+      <footer class="dashboard-footer">
+        <p>© 2025 Nombre del proyecto. Todos los derechos reservados.</p>
+      </footer>
+    </section>
+  </main>
+</body>
+
+</html>
+</file>
+
+<file path="src/views/profile.ejs">
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Perfil de usuario - Panel de control">
+  <title>Perfil de Usuario</title>
+  <link rel="stylesheet" href="/styles/profile.css" type="text/css">
+  <script type="application/javascript" src="/js/redirectView.js"></script>
+</head>
+
+<body>
+  <main class="profile-container">
+    <nav class="top-nav">
+      <button class="back-button" data-path="/app/v1/dashboard" onclick="redirect(this)">
+        ← Volver al Dashboard
+      </button>
+    </nav>
+
+    <section class="card profile-header">
+      <div class="avatar-box">
+        <img class="avatar" src="https://randomuser.me/api/portraits/men/32.jpg" alt="Foto de perfil">
+      </div>
+      <h1 class="profile-title"><%= userData.firstName %> <%= userData.middleName %> <%= userData.firstLastName %> <%= userData.secondLastName %></h1>
+      <p class="profile-role"><%= userData.role %></p>
+      <p class="profile-subtitle">Gestiona tu información personal y configuraciones.</p>
+    </section>
+
+    <section class="card profile-details">
+      <h2 class="section-title">Información Personal</h2>
+      <div class="details-grid">
+        <div class="detail-item">
+          <span class="detail-label">Correo:</span>
+          <span class="detail-value"><%= userData.email %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Teléfono:</span>
+          <span class="detail-value"><%= userData.phone %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Dirección:</span>
+          <span class="detail-value"><%= userData.address %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Matrícula:</span>
+          <span class="detail-value"><%= userData.registrationNumber %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Programa:</span>
+          <span class="detail-value"><%= userData.program %></span>
+        </div>
+        <div class="detail-item">
+          <span class="detail-label">Fecha de ingreso:</span>
+          <span class="detail-value"><%= userData.createdAt %></span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card profile-actions">
+      <h2 class="section-title">Acciones Rápidas</h2>
+      <div class="actions-grid">
+        <button class="action-button primary">
+          ✏️ Editar Perfil
+        </button>
+        <button class="action-button warning">
+          🔒 Cambiar Contraseña
+        </button>
+        <button class="action-button danger" data-path="/app/v1/" onclick="redirect(this)">
+          🚪 Cerrar Sesión
+        </button>
+      </div>
+    </section>
+
+    <footer class="profile-footer">
+      <p>© 2025 Sistema de Gestión Académica. Todos los derechos reservados.</p>
+    </footer>
+  </main>
+</body>
+
+</html>
+</file>
+
+<file path=".gitignore">
+# Created by https://www.toptal.com/developers/gitignore/api/windows,macos,linux,node
+# Edit at https://www.toptal.com/developers/gitignore?templates=windows,macos,linux,node
+
+### Linux ###
+*~
+
+# temporary files which can be created if a process still has a handle open of a deleted file
+.fuse_hidden*
+
+# KDE directory preferences
+.directory
+
+# Linux trash folder which might appear on any partition or disk
+.Trash-*
+
+# .nfs files are created when an open file is removed but is still being accessed
+.nfs*
+
+### macOS ###
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+# mysql data base Docker container
+db_data
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+### macOS Patch ###
+# iCloud generated files
+*.icloud
+
+### Node ###
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Directory for instrumented libs generated by jscoverage/JSCover
+lib-cov
+
+# Coverage directory used by tools like istanbul
+coverage
+*.lcov
+
+# nyc test coverage
+.nyc_output
+
+# Grunt intermediate storage (https://gruntjs.com/creating-plugins#storing-task-files)
+.grunt
+
+# Bower dependency directory (https://bower.io/)
+bower_components
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons (https://nodejs.org/api/addons.html)
+build/Release
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# Snowpack dependency directory (https://snowpack.dev/)
+web_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Optional stylelint cache
+.stylelintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Output of 'npm pack'
+*.tgz
+
+# Yarn Integrity file
+.yarn-integrity
+
+# dotenv environment variable files
+# .env
+.env.development.local
+.env.test.local
+.env.production.local
+.env.local
+
+# parcel-bundler cache (https://parceljs.org/)
+.cache
+.parcel-cache
+
+# Next.js build output
+.next
+out
+
+# Nuxt.js build / generate output
+.nuxt
+dist
+
+# Gatsby files
+.cache/
+# Comment in the public line in if your project uses Gatsby and not Next.js
+# https://nextjs.org/blog/next-9-1#public-directory-support
+# public
+
+# vuepress build output
+.vuepress/dist
+
+# vuepress v2.x temp and cache directory
+.temp
+
+# Docusaurus cache and generated files
+.docusaurus
+
+# Serverless directories
+.serverless/
+
+# FuseBox cache
+.fusebox/
+
+# DynamoDB Local files
+.dynamodb/
+
+# TernJS port file
+.tern-port
+
+# Stores VSCode versions used for testing VSCode extensions
+.vscode-test
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+### Node Patch ###
+# Serverless Webpack directories
+.webpack/
+
+# Optional stylelint cache
+
+# SvelteKit build / generate output
+.svelte-kit
+
+### Windows ###
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Windows Installer files
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Windows shortcuts
+*.lnk
+
+# End of https://www.toptal.com/developers/gitignore/api/windows,macos,linux,node
+</file>
+
+<file path="src/controllers/users/create.js">
+// Import the UserServices class from the userServices module
+import { UserServices } from '../../services/userServices.js';
+// Import Boom for handling HTTP-friendly error objects
+import Boom from '@hapi/boom';
+
+export const createOneUser = async (req, res, next) => {
+
+  // Extract username and password from the request body
+  const newUser = {
+    id: req.body.newUserData.id,
+    userName: req.body.newUserData.userName,
+    password: req.body.newUserData.password,
+    role: req.body.newUserData.role,
+    email: req.body.newUserData.email,
+    phone: req.body.newUserData.phone,
+    address: req.body.newUserData.address,
+    registrationNumber: req.body.newUserData.registrationNumber,
+    program: req.body.newUserData.program,
+    firstName: req.body.newUserData.firstName,
+    middleName: req.body.newUserData.middleName,
+    firstLastName: req.body.newUserData.firstLastName,
+    secondLastName: req.body.newUserData.secondLastName,
+  };
+
+  // Instantiate the UserServices class to manage the users operations
+  const userManager = new UserServices();
+
+  try {
+    // Attempt to create a new user using the provided data
+    const response = await userManager.createOne(newUser);
+
+    // If the user is created successfully, send a success response
+    if (response.status === 'CREATED SUCCESSFULLY') {
+      return res.status(201).json({
+        success: true,
+        message: 'User created successfully',
+        // Include the new token in the response
+        authentication: res.locals.newUserToken
+      });
+    }
+
+  } catch (err) {
+    if (Boom.isBoom(err)) {
+      return next(err);
+    }
+    // Handle errors during user creation by sending a Boom error response
+    const boomError = Boom.serverUnavailable(
+      'Unable to create the user in the database',
+      err
+    );
+    // Pass the Boom error to the next middleware in the stack
+    next(boomError);
+  }
+};
+</file>
+
+<file path="src/controllers/users/login.js">
+// Import the UserServices class from the userServices module
+import { UserServices } from '../../services/userServices.js';
+// Import Boom to create HTTP-friendly error objects
+import Boom from '@hapi/boom';
+// Import jwt library to manage tokens
+import jwt from 'jsonwebtoken';
+// Import configuration settings
+import { config } from '../../config/config.js';
+
+export const loginUser = async (req, res, next) => {
+
+  // Extract username and password from the request body
+  const { userName, password } = req.body.credentials;
+
+  // Validate if the username and password is sent.
+  if (!userName || !password) {
+  return next(Boom.badRequest('Username and password are required'));
+}
+
+  // Instantiate the UserServices class to manage user operations
+  const userManager = new UserServices();
+
+  try {
+    // Attempt to log in the user by validating the credentials
+    const response = await userManager.login(userName, password);
+
+    let message = "";
+
+    // Handle different outcomes of the login attempt
+    switch (response.status) {
+      case 'user not found':
+        // If the user is not found in the database, return a 404 error view
+        message = "Usuario incorrecto. Por favor verifique e intente de nuevo.";
+        return res.status(404).render("authError", { message: message, type: "user" });
+      case 'wrong password':
+        // If the password is incorrect, return a 401 error view
+        message = "Contraseña incorrecta. Por favor verifique e intente de nuevo.";
+        return res.status(401).render("authError", { message: message, type: "password" });
+      case 'logged':
+        // If login is successful send a cookie with the token
+        res.cookie('authentication', response.token, { httpOnly: true });
+        // Decode the token to get the user ID
+        const decoded = jwt.verify(response.token, config.authAppJwtKey);
+        // Get username from DB using the ID in the token
+        const userRecord = await userManager.listOne(decoded.id);
+        // Finally render the dashboard view with the username data
+        return res.status(200).render("dashboard", { userName: userRecord.userName} );
+      default:
+        // Handle any unexpected cases with a 500 error
+        return next(Boom.badImplementation('Servicio no disponible'));
+    }
+  } catch (err) {
+    if (Boom.isBoom(err)) {
+      return next(err);
+    }
+    // Handle errors during the login process by returning a 503 error
+    return next(Boom.serverUnavailable(
+      'Unable to verify user credentials in the database',
+      err
+    ));
+  }
+};
+</file>
+
+<file path="src/DB/index.js">
+// Import the createPool function from the mysql2/promise module
+import { createPool } from "mysql2/promise";
+// Import configuration settings
+import { config } from "../config/config.js";
+
+// Create a connections pool to the MySQL database
+export const pool = createPool({
+  // MySQl server address
+  host: config.dbHost,
+  // data base connection username
+  user: config.dbUser,
+  // data base connection password
+  password: config.dbUserPassword,
+  // MySQL engine port (3306 is default port)
+  port: config.dbPort || 3306,
+  // data base schema name to connect
+  database: config.dbName,
+  // Queue connection requests if all are busy
+  waitForConnections: true,
+  // Max number of connections in the pool
+  connectionLimit: 10,
+  // Unlimited queued requests
+  queueLimit: 0,
+});
+</file>
+
+<file path="src/routes/UIRouter.js">
+// Import the Router class from Express
+import { Router } from "express";
+// Import the middleware to verify tokens from the authentication app
+import { authAppVerifyToken } from
+'../middlewares/tokenHandlers/authAppTokenHandler.js';
+// Import the controllers functions to manage user interfaces templates
+import { loginForm } from '../controllers/UI/loginForm.js';
+import { registerForm } from '../controllers/UI/registerForm.js';
+import { dashboard } from '../controllers/UI/dashboard.js';
+import { profile } from '../controllers/UI/profile.js';
+
+// Create a new Router instance
+export const UIRouter = Router();
+
+// Define a GET route for login view
+UIRouter.get(
+  // Route path display the login view
+  '/',
+  // Controller function to render a login template
+  loginForm
+);
+
+// Define a GET route for user register view
+UIRouter.get(
+  // Route path display the user register view
+  '/register',
+  // Controller function to render a user register template
+  registerForm
+);
+
+
+// Define a GET route for dashboard view
+UIRouter.get(
+  // Route path display the dashboard view
+  '/dashboard',
+  // Middleware to verify the token before proceeding to the controller
+  authAppVerifyToken,
+  // Controller function to render a dashboard template
+  dashboard
+);
+
+// Define a GET route for certificate academic form view
+UIRouter.get(
+  // Route path display the certificate academic form view
+  '/profile',
+  // Middleware to verify the token before proceeding to the controller
+  authAppVerifyToken,
+  // Controller function to render a dashboard template
+  profile
+);
+</file>
+
+<file path="src/views/loginForm.ejs">
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Inicio de sección">
+  <title>Inicio de sección</title>
+  <meta name="robots" content="index,follow">
+  <link rel="stylesheet" href="/styles/loginForm.css" type="text/css">
+  <script type="application/javascript" src="/js/validateFormLoginFields.js"></script>
+  <script type="application/javascript" src="/js/login.js"></script>
+  <script type="application/javascript" src="/js/redirectView.js"></script>
+</head>
+
+<body>
+  <main class="container">
+    <section class="card project-info">
+      <h1 class="project-name">Sistema académico</h1>
+      <h2 class="welcome-title">Bienvenido</h2>
+      <picture class="logo-box">
+        <img class="logo" src="https://upload.wikimedia.org/wikipedia/commons/6/6a/JavaScript-logo.png"
+          alt="JavaScript Logo" />
+      </picture>
+    </section>
+    <section class="card login-form">
+      <h2 class="login-title">Inicio de sección</h2>
+      <form class="form-box" id="loginForm" onsubmit="return handleSubmit(event)">
+        <label class="form-lb" for="username">Usuario</label>
+        <input class="form-input" type="text" id="username" name="username" required />
+
+        <label class="form-lb" for="password">Contraseña</label>
+        <input class="form-input" type="password" id="password" name="password" required />
+
+        <p class="wrong-input" id="wrong-input"></p>
+        <button class="form-button" type="submit">Enviar</button>
+      </form>
+      <div class="linksBox">
+        <p class="support">Contactar a soporte</p>
+        <p class="register" data-path="/app/v1/register" onclick="redirect(this)">
+          Registrarse
+        </p>
+        <p class="forgot">Olvidé contraseña</p>
+      </div>
+    </section>
+  </main>
+</body>
+
+</html>
+</file>
+
+<file path="package.json">
+{
+  "name": "academic-system-example",
+  "version": "0.0.1",
+  "description": "Web application example",
+  "keywords": [
+    "JavaScript",
+    "Node"
+  ],
+  "homepage": "https://github.com/Cristianco9/academic-system-example#readme",
+  "bugs": {
+    "url": "https://github.com/Cristianco9/academic-system-example/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Cristianco9/academic-system-example.git"
+  },
+  "license": "MIT",
+  "author": "Cristian Camilo Cortes Ortiz<cristian_cortes_ortiz@hotmail.com>",
+  "type": "module",
+  "main": "src/app.js",
+  "scripts": {
+    "dev": "nodemon src/app.js",
+    "dev-dep": "npm install && npm install nodemon morgan eslint eslint-config-prettier eslint-plugin-prettier prettier --save-dev -D",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.0",
+    "passport": "^0.7.0",
+    "passport-jwt": "^4.0.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-prettier": "^5.5.6",
+    "morgan": "^1.12.1",
+    "nodemon": "^3.1.14",
+    "prettier": "^3.9.9"
+  }
+}
+</file>
+
+<file path="README.md">
+# IENSC
+
+---
+
+### ejemplo sistema académico
+
+Esta **aplicación web** implementa un sistema completo de gestión de usuarios con
+operaciones **CRUD** sobre una **base de datos**. Además, incluye **funcionalidades** de **autenticación**, **gestión de sesiones**, un **dashboard interactivo** y un **módulo de perfil de usuario**.
+
+El proyecto integra **estrategias de autenticación seguras**, garantizando la **protección** de las **credenciales** y el **acceso controlado** a las distintas secciones de la aplicación. Su **arquitectura** está pensada para ser **clara, escalable y fácil de mantener**, ofreciendo una **base sólida** para proyectos **académicos y profesionales**.
+
+---
+
+## ⚙️ funcionalidades
+
+- **Gestión de Usuarios**
+  - Registro de nuevos usuarios.
+  - Autenticación mediante credenciales (login).
+  - Cierre de sesión seguro.
+  - Visualización y edición del perfil personal.
+
+- **CRUD en la Base de Datos**
+  - Creación de registros.
+  - Lectura/consulta de información almacenada.
+  - Actualización de registros existentes.
+  - Eliminación de registros.
+
+- **Autenticación y Seguridad**
+  - Estrategias de autenticación seguras.
+  - Manejo de sesiones con expiración.
+  - Validación de datos de entrada.
+
+- **Interfaz de Usuario**
+  - Vista de autenticación (login y registro).
+  - Dashboard con información general del usuario.
+  - Sección de perfil con datos personales.
+
+- **Arquitectura Escalable**
+  - Separación entre frontend, backend y base de datos.
+  - Código organizado siguiendo buenas prácticas de desarrollo.
+
+---
+
+## Tecnologías utilizadas
+
+- **JavaScript**
+- **Node.js**
+- **Express.js**
+- **Variables de entorno**
+- **JWT**
+- **Boom**
+- **Bcrypt**
+- **EJS**
+- **HTML**
+- **CSS**
+- **EJS**
+- **MySQL**
+- **MySQLWorkbench**
+
+---
+
+## Empezando
+
+> Siga estos sencillos pasos para poner en funcionamiento una copia local de este proyecto.
+
+### Prerrequisitos
+
+Asegúrese de tener lo siguiente instalado en su máquina:
+
+- [Node.js](https://nodejs.org/en/)
+- [npm](https://www.npmjs.com/)
+- [MySQL Server](https://dev.mysql.com/downloads/mysql/)
+- [MySQLWorkbench](https://dev.mysql.com/downloads/workbench/)
+- [Postman](https://www.postman.com/downloads/)
+
+#### Extensiones de Visual Studio Code
+- [editorConfig for VS Code](https://marketplace.visualstudio.com/items?itemName=EditorConfig.EditorConfig)
+- [ESLint](https://marketplace.visualstudio.com/items?itemName=dbaeumer.vscode-eslint)
+- [Error Lens](https://marketplace.visualstudio.com/items?itemName=usernamehw.errorlens)
+
+
+---
+
+## Instalación
+
+1. Clonar el repositorio:
+
+```sh
+git clone https://github.com/iensc-software-sena/academic-system-example.git
+```
+
+2. Diríjase al directorio del proyecto:
+
+```sh
+cd academic-system-example
+```
+
+3. Cree la base de datos en el motor de MySQL:
+
+```SQL
+-- Create the data base
+CREATE DATABASE IF NOT EXISTS academic_system_db
+  DEFAULT CHARACTER SET utf8mb4
+  DEFAULT COLLATE utf8mb4_unicode_ci;
+
+-- Use the created data base
+USE academic_system_db;
+
+-- Create the Users table
+CREATE TABLE IF NOT EXISTS Users (
+    id INT PRIMARY KEY,
+    userName VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    phone VARCHAR(20),
+    address VARCHAR(255),
+    registrationNumber VARCHAR(50) UNIQUE,
+    program VARCHAR(100),
+    firstName VARCHAR(50) NOT NULL,
+    middleName VARCHAR(50),
+    firstLastName VARCHAR(50) NOT NULL,
+    secondLastName VARCHAR(50),
+    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+4. Instale las dependencias de desarrollo necesarias para ejecutar el proyecto:
+
+```sh
+npm run dev-dep
+```
+
+5. Para iniciar el servidor de desarrollo y ejecutar el proyecto, utilice el siguiente comando:
+
+```sh
+npm run dev
+```
+
+---
+
+## Uso de la aplicación
+
+Por medio de la aplicación **Postman** se pueden probar las funcionalidades que entrega
+la **API**, a través de los siguientes **EndPoints**:
+
+### Autenticar un usuario
+Método: **POST**
+EndPoint: **/app/v1/users/login**
+Body:
+```JSON
+{
+    "credentials": {
+        "userName": "andres0714",
+        "password": "pass1234"
+    }
+}
+```
+Respuesta:
+> Redireccionamiento a la vista de **Dashboard**
+
+---
+
+### Crear un nuevo usuario
+Método: **POST**
+EndPoint: **/app/v1/users/create**
+Body:
+```JSON
+{
+    "newUserData": {
+        "id": 1036543782,
+        "userName": "andres0714",
+        "password": "pass1234",
+        "role": "estudiante",
+        "email": "andreslopez07@iensch.edu.co",
+        "phone": "+57 314 564 2356",
+        "address": "Calle 23 # 45 - 65",
+        "registrationNumber": "20257654321",
+        "program": "Ingeniería de sistemas",
+        "firstName": "Andres",
+        "middleName": "Felipe",
+        "firstLastName": "Lopez",
+        "secondLastName": "Morales"
+    }
+}
+```
+Respuesta:
+```JSON
+{
+    "success": true,
+    "message": "User created successfully"
+}
+```
+
+---
+
+### Listar un usuario especifico
+Método: **POST**
+EndPoint: **/app/v1/users/listone**
+Body:
+```JSON
+{
+    "id": 1036543782
+}
+```
+Respuesta:
+```JSON
+{
+    "success": true,
+    "message": "User found successfully",
+    "user": {
+        "id": 1036543782,
+        "userName": "andres0714",
+        "role": "estudiante",
+        "email": "andreslopez07@iensch.edu.co",
+        "phone": "+57 314 564 2356",
+        "address": "Calle 23 # 45 - 65",
+        "registrationNumber": "20257654321",
+        "program": "Ingeniería de sistemas",
+        "firstName": "Andres",
+        "middleName": "Felipe",
+        "firstLastName": "Lopez",
+        "secondLastName": "Morales",
+        "createdAt": "2025-08-31T23:34:58.000Z",
+        "updatedAt": "2025-08-31T23:34:58.000Z"
+    }
+}
+```
+
+---
+
+### Listar todos los usuarios
+Método: **GET**
+EndPoint: **/app/v1/users/listall**
+Body:
+> No se envía **ningún objeto JSON** solo el **token** de autenticación en la **Cookie**
+
+Respuesta:
+```JSON
+{
+    "success": true,
+    "message": "Users retrieved successfully",
+    "users": [
+        {
+            "id": 1036543782,
+            "userName": "andres0714",
+            "role": "estudiante",
+            "email": "andreslopez07@iensch.edu.co",
+            "phone": "+57 314 564 2356",
+            "address": "Calle 23 # 45 - 65",
+            "registrationNumber": "20257654321",
+            "program": "Ingeniería de sistemas",
+            "firstName": "Andres",
+            "middleName": "Felipe",
+            "firstLastName": "Lopez",
+            "secondLastName": "Morales"
+        },
+        {
+            "id": 1056432342,
+            "userName": "laura0817",
+            "role": "estudiante",
+            "email": "lauragomez0817@iensch.edu.co",
+            "phone": "+57 315 678 6543",
+            "address": "Calle 43 # 62 - 12",
+            "registrationNumber": "20257654332",
+            "program": "Ingeniería de electrónica",
+            "firstName": "Laura",
+            "middleName": "Marcela",
+            "firstLastName": "Gomez",
+            "secondLastName": "Rivera"
+        }
+    ]
+}
+```
+
+---
+
+### Actualizar la contraseña de un usuario
+Método: **POST**
+EndPoint: **/app/v1/users/password**
+Body:
+```JSON
+{
+    "credentials": {
+        "id": 1056432342,
+        "userName": "laura0817",
+        "email": "lauragomez0817@iensch.edu.co",
+        "newPassword": "contraseña1234"
+    }
+}
+```
+Respuesta:
+```JSON
+{
+    "success": true,
+    "message": "Password updated successfully"
+}
+```
+
+---
+### Actualizar la información de un usuario
+Método: **POST**
+EndPoint: **/app/v1/users/update**
+Body:
+```JSON
+{
+    "id": 1056432342,
+    "newUserData": {
+        "userName": "Carlos1706",
+        "role": "estudiante",
+        "email": "carlosalzate1706@iensch.edu.co",
+        "phone": "+57 316 789 0543",
+        "address": "Calle 43 # 12 - 32",
+        "registrationNumber": "20257653212",
+        "program": "Ingeniería de mecatrónica",
+        "firstName": "Carlos",
+        "middleName": "Javier",
+        "firstLastName": "Alzate",
+        "secondLastName": "Prada"
+    }
+}
+```
+Respuesta:
+```JSON
+{
+    "success": true,
+    "message": "User updated successfully"
+}
+```
+
+---
+
+### Eliminar un usuario en especifico
+Método: **POST**
+EndPoint: **/app/v1/users/delete**
+Body:
+```JSON
+{
+    "id": 1056432342
+}
+```
+Respuesta:
+```JSON
+{
+    "success": true,
+    "message": "User deleted successfully"
+}
+```
+
+---
+
+## Contribuciones
+
+Las contribuciones hacen que la comunidad de código abierto sea un lugar increíble 
+para aprender, inspirar y crear. Cualquier contribución que realices será muy apreciada.
+
+1. Realice un fork del proyecto  
+2. Cree una rama para su funcionalidad (`git checkout -b feature/AmazingFeature`)  
+3. Realiza sus cambios y haga un commit (`git commit -m 'Agregar nueva funcionalidad increíble'`)  
+4. Haga un push a la rama (`git push origin feature/AmazingFeature`)  
+5. Abra un Pull Request
+
+---
+## Licencia
+
+Distribuido bajo la Licencia MIT. Consulta el archivo `LICENSE` para más información.
+
+---
+
+## Contacto
+LinkedIn - [cristianco9](https://www.linkedin.com/in/cristianco9/)
+
+---
+
+Enlace al proyecto: [Github]
+(https://github.com/iensc-software-sena/academic-system-example)
+
+---
+
+Siéntase libre de modificar este proyecto según sus preferencias y de añadir cualquier información adicional que consideres útil para los usuarios y colaboradores.
+</file>
+
+<file path="src/services/userServices.js">
+// import the data base pool of connections
+import { pool } from '../DB/index.js';
+// import the promise to encrypt the user's password
+import { hashPassword } from '../utils/auth/passwordHash.js';
+// import the module to sign a JWT
+import { signUserToken } from '../utils/auth/tokenSign.js';
+// bcrypt takes care of hashing the user's password
+import bcrypt from 'bcryptjs';
+// boom allows managing possible errors
+import Boom from '@hapi/boom';
+// import the configuration module
+import { config } from '../config/config.js'
+
+// create the user services class
+export class UserServices {
+
+  async login(userName, password) {
+    try {
+      // Find the user by their username in the data base
+      const [ rows ] = await pool.query(
+        'SELECT * FROM Users WHERE userName = ?',
+        [userName]
+      );
+
+      const userRecord = rows[0];
+
+      // if not found a user in the database
+      if (!userRecord) {
+        return { status: 'user not found' };
+      }
+
+      // Compare the provided password with the stored password hash
+      const validPassword = await bcrypt.compare(
+        password,
+        userRecord.password
+      );
+
+      if (!validPassword) {
+        return { status: 'wrong password' };
+      }
+
+      // Generate JWT token with user data
+      const userToken = signUserToken(
+        { id: userRecord.id },
+        config.authAppJwtKey,
+        '1h'
+      );
+
+      // Resolves the promise with the JWT token
+      return { status: 'logged', token: userToken };
+    } catch (err) {
+      throw Boom.boomify(err, {
+        message: 'Unable to verify user credentials',
+      });
+    }
+  }
+
+  async createOne(newUser) {
+    try {
+      // searches the database if there is a user with this username or id
+      const [rows] = await pool.query(
+        'SELECT * FROM Users WHERE userName = ? OR id = ?',
+        [newUser.userName, newUser.id]
+      );
+
+      // if user exists, reject the user insertion
+      if (rows.length > 0) {
+        // Check which field is the repeater
+        if (rows.some(r => r.userName === newUser.userName)) {
+          throw Boom.conflict('Username already exists');
+        }
+        if (rows.some(r => r.id === newUser.id)) {
+          throw Boom.conflict('User ID already exists');
+        }
+      }
+
+      // hash the user password before it is recorded
+      const hash = await hashPassword(newUser.password);
+
+      // create a new record in the database
+      await pool.query(
+        `INSERT INTO Users (
+          id,
+          userName,
+          password,
+          role,
+          email,
+          phone,
+          address,
+          registrationNumber,
+          program,
+          firstName,
+          middleName,
+          firstLastName,
+          secondLastName
+        )
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          newUser.id,
+          newUser.userName,
+          hash,
+          newUser.role,
+          newUser.email,
+          newUser.phone,
+          newUser.address,
+          newUser.registrationNumber,
+          newUser.program,
+          newUser.firstName,
+          newUser.middleName,
+          newUser.firstLastName,
+          newUser.secondLastName,
+        ]
+      );
+
+      // return a success response
+      return { status: 'CREATED SUCCESSFULLY' };
+    } catch (err) {
+      // Return a Boom error if there's an exception
+      throw Boom.boomify(err, {
+        message: 'Unable to create new user',
+      });
+    }
+  }
+
+  async updateOne(id, newUserData) {
+    if (!newUserData) {
+      // return an error response
+      throw Boom.badRequest('No data provided');
+    }
+
+    try {
+      // update the record in the database
+      const [result] = await pool.query(
+        `UPDATE Users
+         SET
+          userName = ?,
+          role = ?,
+          email = ?,
+          phone = ?,
+          address = ?,
+          registrationNumber = ?,
+          program = ?,
+          firstName = ?,
+          middleName = ?,
+          firstLastName = ?,
+          secondLastName = ?
+         WHERE id = ?`,
+        [
+          newUserData.userName,
+          newUserData.role,
+          newUserData.email,
+          newUserData.phone,
+          newUserData.address,
+          newUserData.registrationNumber,
+          newUserData.program,
+          newUserData.firstName,
+          newUserData.middleName,
+          newUserData.firstLastName,
+          newUserData.secondLastName,
+          id,
+        ]
+      );
+
+      // if no rows were updated, return an error
+      if (result.affectedRows === 0) {
+        throw Boom.notFound('User not found');
+      }
+
+      // return a success response
+      return { status: 'UPDATED SUCCESSFULLY' };
+    } catch (err) {
+      // Return a Boom error if there's an exception
+      throw Boom.boomify(err, {
+        message: 'Unable to update user',
+      });
+    }
+  }
+
+  async updatePassword(id, userName, email, newPassword) {
+    if (!id || !userName || !email || !newPassword) {
+      throw Boom.badRequest('Missing data for password update');
+    }
+
+    try {
+      // Verify that the user exists with the given ID, username, and email
+      const [rows] = await pool.query(
+        'SELECT * FROM Users WHERE id = ? AND userName = ? AND email = ?',
+        [id, userName, email]
+      );
+
+      if (rows.length === 0) {
+        throw Boom.notFound('User not found with provided credentials');
+      }
+
+      // Hash the new password
+      const hash = await hashPassword(newPassword);
+
+      // Update the password
+      const [result] = await pool.query(
+        'UPDATE Users SET password = ? WHERE id = ?',
+        [hash, id]
+      );
+
+      if (result.affectedRows === 0) {
+        throw Boom.notFound('Password not updated');
+      }
+
+      return { status: 'PASSWORD UPDATED SUCCESSFULLY' };
+    } catch (err) {
+      // Return a Boom error if there's an exception
+      throw Boom.boomify(err, {
+        message: 'Unable to update user password',
+      });
+    }
+  }
+
+  async deleteOne(id) {
+    // return an error response
+    if (!id) {
+      throw Boom.badRequest('No user ID provided');
+    }
+
+    try {
+      // destroy the record in the database
+      const [result] = await pool.query(
+        'DELETE FROM Users WHERE id = ?',
+        [id]
+      );
+
+      // if no rows were deleted, return an error
+      if (result.affectedRows === 0) {
+        throw Boom.notFound('User not found');
+      }
+
+      // return a success response
+      return { status: 'DELETED SUCCESSFULLY' };
+    } catch (err) {
+      // return a Boom error if there's an exception deleting the record
+      throw Boom.boomify(err, {
+        message: 'Unable to delete user',
+      });
+    }
+  }
+
+  async listOne(id) {
+    // return an error response
+    if (!id) {
+      throw Boom.badRequest('No user ID provided');
+    }
+
+    try {
+      const [rows] = await pool.query(
+        'SELECT * FROM Users WHERE id = ?',
+        [id]
+      );
+
+      if (rows.length === 0) {
+        // return an error response
+        throw Boom.notFound('User not found');
+      }
+
+      const theUser = rows[0];
+      delete theUser.password;
+
+      return theUser;
+    } catch (err) {
+      // return a Boom error if there's an exception finding the user
+      throw Boom.boomify(err, {
+        message: 'Unable to find user',
+      });
+    }
+  }
+
+  async listAll() {
+    try {
+      // save all records in the constant
+      const [rows] = await pool.query(
+        `SELECT id, userName, role, email, phone, address, registrationNumber,
+                program, firstName, middleName, firstLastName, secondLastName
+         FROM Users
+         ORDER BY id ASC`
+      );
+
+      // if no records exist
+      if (!rows.length) {
+        return [];
+      }
+
+      return [...rows];
+    } catch (err) {
+      // return a Boom error if there's an exception finding all users
+      throw Boom.boomify(err, {
+        message: 'Unable to find users',
+      });
+    }
+  }
+}
+</file>
+
+</files>
