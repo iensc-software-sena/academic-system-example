@@ -11,7 +11,7 @@ El proyecto integra **estrategias de autenticación seguras**, garantizando la *
 
 ---
 
-## ⚙️ funcionalidades
+## funcionalidades
 
 - **Gestión de Usuarios**
   - Registro de nuevos usuarios.
