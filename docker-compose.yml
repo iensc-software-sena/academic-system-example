@@ -1,0 +1,41 @@
+services:
+  academic-system-db:
+    image: mysql:8.0
+    container_name: academic-system-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3355:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - academic-system-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: academic-system-rdbms
+    environment:
+      PMA_HOST: academic-system-db
+    ports:
+      - "8080:80"
+    depends_on:
+      academic-system-db:
+        condition: service_healthy
+    networks:
+      - academic-system-network
+
+volumes:
+  db_data:
+
+networks:
+  academic-system-network:
+    driver: bridge
